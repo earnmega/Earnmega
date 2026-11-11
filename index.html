@@ -54,7 +54,7 @@ import { ShieldCheck,
 , CreditCard, ArrowRight, Folder, RefreshCcw, CalendarDays, Upload, LifeBuoy, Rocket } from 'lucide-react';
 
 // ============================================================================
-// PLATFORM CONFIGURATION & CONSTANTS (PAYWALLS DISABLED FOR TESTING)
+// PLATFORM CONFIGURATION & CONSTANTS
 // ============================================================================
 const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "";
 const DIRECT_ENROLLMENT_GHS = 90.00;
@@ -71,7 +71,7 @@ const SUPPORT_WHATSAPP_INTL = "233596096071";
 interface CurrencyRate {
   code: string;
   symbol: string;
-  rateToGHS: number;
+  rateToGHS: number; 
   region: string;
   name: string;
 }
@@ -102,15 +102,34 @@ const GLOBAL_CURRENCIES: Record<string, CurrencyRate> = {
 };
 
 // ============================================================================
-// GLOBAL COUNTRY DIAL CODES
+// GLOBAL COUNTRY DIAL CODES (FOR DIGITSTEM CHECKOUT & PILLAR 2 ONBOARDING)
 // ============================================================================
 const COUNTRY_DIAL_CODES = [
   { country: 'Ghana', code: '+233', prefixExample: '233596096071' },
   { country: 'Nigeria', code: '+234', prefixExample: '234803XXXXXXX' },
   { country: 'Kenya', code: '+254', prefixExample: '2547XXXXXXXX' },
   { country: 'South Africa', code: '+27', prefixExample: '2782XXXXXXX' },
+  { country: 'Cameroon', code: '+237', prefixExample: '2376XXXXXXXX' },
+  { country: 'Cote d’Ivoire', code: '+225', prefixExample: '22507XXXXXXXX' },
+  { country: 'Senegal', code: '+221', prefixExample: '22177XXXXXXX' },
+  { country: 'Uganda', code: '+256', prefixExample: '2567XXXXXXXX' },
+  { country: 'Tanzania', code: '+255', prefixExample: '2557XXXXXXXX' },
+  { country: 'Rwanda', code: '+250', prefixExample: '25078XXXXXXX' },
+  { country: 'Zambia', code: '+260', prefixExample: '26097XXXXXXX' },
+  { country: 'Sierra Leone', code: '+232', prefixExample: '23276XXXXXX' },
+  { country: 'Gambia', code: '+220', prefixExample: '2203XXXXXX' },
+  { country: 'Egypt', code: '+20', prefixExample: '2010XXXXXXXX' },
   { country: 'United States', code: '+1', prefixExample: '1202XXXXXXX' },
   { country: 'United Kingdom', code: '+44', prefixExample: '4477XXXXXXXX' },
+  { country: 'Canada', code: '+1', prefixExample: '1416XXXXXXX' },
+  { country: 'India', code: '+91', prefixExample: '9198XXXXXXXX' },
+  { country: 'United Arab Emirates', code: '+971', prefixExample: '97150XXXXXXX' },
+  { country: 'China', code: '+86', prefixExample: '86138XXXXXXXX' },
+  { country: 'Singapore', code: '+65', prefixExample: '658XXXXXXX' },
+  { country: 'Malaysia', code: '+60', prefixExample: '6012XXXXXXX' },
+  { country: 'Philippines', code: '+63', prefixExample: '63917XXXXXXX' },
+  { country: 'Germany', code: '+49', prefixExample: '49151XXXXXXXX' },
+  { country: 'France', code: '+33', prefixExample: '336XXXXXXXX' },
 ];
 
 // ============================================================================
@@ -353,7 +372,7 @@ const INITIAL_PRODUCTS: MarketplaceProduct[] = [
 ];
 
 // ============================================================================
-// 5-STEP RIGOROUS EXAMINATION BANK
+// 5-STEP RIGOROUS EXAMINATION BANK (10 QUESTIONS PER STEP = 50 QUESTIONS TOTAL)
 // ============================================================================
 interface ExamQuestion {
   q: string;
@@ -454,6 +473,7 @@ export default function EarnMegaAffiliatePillar({
   currentProfile?: any;
   onRefreshProfile?: () => void;
 }) {
+  // Primary Workspace Navigation
   type ActiveSection =
     | 'dashboard'
     | 'marketplace'
@@ -482,6 +502,7 @@ export default function EarnMegaAffiliatePillar({
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
   const [isAiBotOpen, setIsAiBotOpen] = useState<boolean>(false);
 
+  // User & Separate Pillar 2 Profile State
   const [userId, setUserId] = useState<string | null>(currentProfile?.id || null);
   const [userAffiliateCode, setUserAffiliateCode] = useState<string>(
     currentProfile?.affiliate_code || 'EM-DB3E04'
@@ -506,6 +527,7 @@ export default function EarnMegaAffiliatePillar({
   const [settingsSavedBanner, setSettingsSavedBanner] = useState<string | null>(null);
   const [downloadSuccessBanner, setDownloadSuccessBanner] = useState<string | null>(null);
 
+  // Financial & Sales State
   const [availableBalanceGHS, setAvailableBalanceGHS] = useState<number>(
     Number(currentProfile?.affiliate_balance || 0)
   );
@@ -519,6 +541,7 @@ export default function EarnMegaAffiliatePillar({
   const [totalClicksCount, setTotalClicksCount] = useState<number>(48);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  // Deposit Modal State
   const [isDepositModalOpen, setIsDepositModalOpen] = useState<boolean>(false);
   const [depositAmountGHS, setDepositAmountGHS] = useState<string>('');
   const [depositMethod, setDepositMethod] = useState<string>('MOBILE_MONEY');
@@ -526,21 +549,29 @@ export default function EarnMegaAffiliatePillar({
   const [depositStep, setDepositStep] = useState<number>(1);
   const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
 
+  // 1-Year License Timer State
   const [licenseActivatedAt, setLicenseActivatedAt] = useState<number>(Date.now());
   const [licenseExpiresAt, setLicenseExpiresAt] = useState<number>(Date.now() + 365 * 24 * 60 * 60 * 1000);
   const [timeRemaining, setTimeRemaining] = useState({ days: 365, hours: 0, minutes: 0, seconds: 0, expired: false });
   const expiryAlertSentRef = useRef<boolean>(false);
 
+  // Renewal Gate State
   const [isRenewalModalOpen, setIsRenewalModalOpen] = useState<boolean>(false);
 
+  // Marketplace Search, Filter & Modals
   const [products, setProducts] = useState<MarketplaceProduct[]>(INITIAL_PRODUCTS);
   const [linkTags, setLinkTags] = useState<Record<string, string>>({});
   const [marketSearch, setMarketSearch] = useState<string>('');
   const [marketFilter, setMarketFilter] = useState<string>('All Offers');
-const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduct | null>(null);
-  const [detailsModalProduct, setDetailsModalProduct] = useState<MarketplaceProduct | null>(null);
+  const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduct null |>(null);
+  const [detailsModalProduct, setDetailsModalProduct] = useState<MarketplaceProduct null |>(null);
+  const [customSlugInput, setCustomSlugInput] = useState<string>('my-custom-slug');
+  const [subIdTag, setSubIdTag] = useState<string>('whatsapp_status');
+  const [showQrModalFor, setShowQrModalFor] = useState<string | null>(null);
+  const [showEmbedModalFor, setShowEmbedModalFor] = useState<string | null>(null);
 
-  const [activeSalesPageProduct, setActiveSalesPageProduct] = useState<MarketplaceProduct | null>(null);
+  // Buyer Sales Page & Checkout State
+  const [activeSalesPageProduct, setActiveSalesPageProduct] = useState<MarketplaceProduct null |>(null);
   const [isDirectEnrollmentCheckout, setIsDirectEnrollmentCheckout] = useState<boolean>(false);
   const [referredByCode, setReferredByCode] = useState<string>('EM-DB3E04');
   const [checkoutStep, setCheckoutStep] = useState<null | 1 | 2>(null);
@@ -549,8 +580,10 @@ const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduc
   const [buyerDialCode, setBuyerDialCode] = useState<string>('+233');
   const [buyerPhone, setBuyerPhone] = useState<string>('');
   const [buyerEmail, setBuyerEmail] = useState<string>('');
+  const [checkoutGatewayCurrency, setCheckoutGatewayCurrency] = useState<string>('GHS');
   const [includeOrderBump, setIncludeOrderBump] = useState<boolean>(false);
 
+  // Transactions, Notifications & Abandoned Leads CRM
   const [transactions, setTransactions] = useState<
     Array<{
       id: string;
@@ -600,6 +633,13 @@ const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduc
     }>
   >([]);
 
+  // Shortener / Link Manager State
+  const [shortLinks, setShortLinks] = useState<
+    Array<{ id: string; label: string; fullUrl: string; shortUrl: string; clicks: number }>
+  >([]);
+  const [selectedProductForLink, setSelectedProductForLink] = useState<string>(INITIAL_PRODUCTS[0].id);
+
+  // 5-Step Examination & Certificate State
   const [examProductId, setExamProductId] = useState<string>(INITIAL_PRODUCTS[0].id);
   const [currentExamStep, setCurrentExamStep] = useState<number>(1);
   const [unlockedExamStep, setUnlockedExamStep] = useState<number>(1);
@@ -614,6 +654,7 @@ const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduc
   const [certificateStudentName, setCertificateStudentName] = useState<string>('Gerald Mingle');
   const [certificateCode, setCertificateCode] = useState<string>('EM-CERT-908421');
 
+  // Contests & 100K Views Challenge State
   const [registeredContests, setRegisteredContests] = useState<string[]>([]);
   const [contestModalOpen, setContestModalOpen] = useState<null | 'register_sales' | 'viral_100k' | 'sales_50' | 'sales_100'>(null);
   const [contestFullName, setContestFullName] = useState<string>('');
@@ -624,6 +665,7 @@ const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduc
   const [contestStatusBanner, setContestStatusBanner] = useState<string | null>(null);
   const [adminMilestoneAlertSent, setAdminMilestoneAlertSent] = useState<boolean>(false);
 
+  // Friday Payout State
   const [payoutChannel, setPayoutChannel] = useState<'MOBILE_MONEY' | 'BANK_TRANSFER' | 'CRYPTO_USDT'>('MOBILE_MONEY');
   const [accountHolderName, setAccountHolderName] = useState<string>('');
   const [momoNetwork, setMomoNetwork] = useState<string>('MTN');
@@ -635,9 +677,19 @@ const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduc
   const [payoutFeedback, setPayoutFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isSubmittingPayout, setIsSubmittingPayout] = useState<boolean>(false);
 
+  // Creator Whitelist Submission State
+  const [vendorTitle, setVendorTitle] = useState<string>('');
+  const [vendorPrice, setVendorPrice] = useState<string>('240');
+  const [vendorSalesUrl, setVendorSalesUrl] = useState<string>('');
+  const [vendorDesc, setVendorDesc] = useState<string>('');
+  const [vendorFeedback, setVendorFeedback] = useState<string | null>(null);
+
+  // Profit Calculator State
   const [calcProductId, setCalcProductId] = useState<string>(INITIAL_PRODUCTS[0].id);
   const [calcDailySales, setCalcDailySales] = useState<number>(3);
 
+  // EarnMega AI Business Brain Bot State
+  const [aiBotCategory, setAiBotCategory] = useState<'Brain' | 'Marketing' | 'Sales' | 'Product'>('Brain');
   const [aiInput, setAiInput] = useState<string>('');
   const [aiMessages, setAiMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string }>>([
     {
@@ -646,11 +698,20 @@ const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduc
     }
   ]);
 
+  // Extra Feature: WhatsApp Auto-Closer & Bio-Link Storefront Preview
+  const [waCloserNumber, setWaCloserNumber] = useState<string>('233596096071');
+  const [waCloserProduct, setWaCloserProduct] = useState<string>(INITIAL_PRODUCTS[0].id);
+  const [showBioLinkPreview, setShowBioLinkPreview] = useState<boolean>(false);
+
+  // ============================================================================
+  // INITIALIZE URL PARAMS (SALES PAGE LANDING) & SUPABASE DATA
+  // ============================================================================
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const prodParam = params.get('prod');
       const refParam = params.get('ref');
+      const storeParam = params.get('store');
 
       if (refParam) {
         localStorage.setItem('earnmega_affiliate_ref', refParam);
@@ -667,6 +728,10 @@ const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduc
         if (matched) {
           setActiveSalesPageProduct(matched);
         }
+      }
+
+      if (storeParam) {
+        setShowBioLinkPreview(true);
       }
     }
     loadSupabaseData();
@@ -738,12 +803,46 @@ const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduc
           status: (row.status || 'COMPLETED').toUpperCase()
         }));
         setTransactions(mappedTx);
+
+        const saleNotifs = mappedTx.map((t: any) => ({
+          id: `notif-${t.id}`,
+          title: `Sale Commission for ${t.productTitle}`,
+          subtitle: `Buyer: ${t.buyerName} (${t.buyerEmail}) • Order ID: ${t.orderUid}`,
+          amountGHS: t.commissionGHS,
+          timeAgo: t.date,
+          read: false
+        }));
+        setNotificationsList(saleNotifs);
+      }
+
+      const { data: leadsData } = await supabase
+        .from('affiliate_checkout_leads')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (leadsData) {
+        setAbandonedLeads(
+          leadsData.map((l: any) => ({
+            id: l.id,
+            fullName: l.buyer_full_name,
+            email: l.buyer_email,
+            phone: l.buyer_phone,
+            country: l.buyer_country,
+            productTitle: l.product_title,
+            amountGHS: Number(l.amount_ghs || 240),
+            createdAt: new Date(l.created_at).toISOString().replace('T', ' ').substring(0, 16)
+          }))
+        );
       }
     } catch (e) {
       console.error('Error loading Pillar 2 data:', e);
     }
   };
 
+  // ============================================================================
+  // CURRENCY CONVERSION & UNIQUE PRODUCT LINK HELPERS
+  // ============================================================================
   const formatAmount = (amountGHS: number, currencyOverride?: string): string => {
     const code = currencyOverride || selectedCurrency;
     const rateObj = GLOBAL_CURRENCIES[code] || GLOBAL_CURRENCIES.GHS;
@@ -769,6 +868,9 @@ const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduc
     setTimeout(() => setCopiedKey(null), 2200);
   };
 
+  // ============================================================================
+  // DIGITSTEM 2-STEP CHECKOUT & PAYSTACK EXECUTION
+  // ============================================================================
   const openDigitstemCheckoutForProduct = (product: MarketplaceProduct) => {
     setIsDirectEnrollmentCheckout(false);
     setActiveSalesPageProduct(product);
@@ -787,7 +889,7 @@ const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduc
       return;
     }
 
-const targetTitle = isDirectEnrollmentCheckout
+    const targetTitle = isDirectEnrollmentCheckout
       ? 'EarnMega Pillar 2 Direct Affiliate Access (No Product)'
       : activeSalesPageProduct?.title || 'EarnMega Digital Product';
     const targetAmountGHS = isDirectEnrollmentCheckout
@@ -873,6 +975,17 @@ const targetTitle = isDirectEnrollmentCheckout
       setAvailableBalanceGHS((prev) => prev + commGHS);
       setTotalEarningsGHS((prev) => prev + commGHS);
       setTotalSalesCount((prev) => prev + 1);
+      setNotificationsList((prev) => [
+        {
+          id: `notif-${Date.now()}`,
+          title: `Sale Commission for ${prod.title}`,
+          subtitle: `Buyer: ${buyerFullName} (${buyerEmail}) • Unique ID: ${uniqueOrderUid}`,
+          amountGHS: commGHS,
+          timeAgo: 'Just now',
+          read: false
+        },
+        ...prev
+      ]);
     }
 
     setCheckoutStep(null);
@@ -885,7 +998,7 @@ const targetTitle = isDirectEnrollmentCheckout
       );
     } else {
       alert(
-        `✅ Payment Confirmed!\n\nUnique Purchase ID: ${uniqueOrderUid}\nBuyer: ${buyerFullName} (${buyerEmail})\nProduct Unlocked: ${prod.title}\nAffiliate Credited Instantly: GH₵ ${commGHS.toFixed(2)}`
+        `✅ Payment Confirmed!\n\nUnique Purchase ID: ${uniqueOrderUid}\nBuyer: ${buyerFullName} (${buyerEmail})\nProduct Unlocked: ${prod.title}\nAffiliate (${referredByCode || userAffiliateCode}) Credited Instantly: GH₵ ${commGHS.toFixed(2)}\n\nOpening your product access portal & Pillar 2 Dashboard!`
       );
       window.open(prod.deliveryUrl, '_blank');
     }
@@ -961,7 +1074,7 @@ const targetTitle = isDirectEnrollmentCheckout
           .eq('id', userId);
       } catch (_) {}
     }
-    setSettingsSavedBanner('✅ Pillar 2 Profile & Settings saved independently!');
+    setSettingsSavedBanner('✅ Pillar 2 Profile & Settings saved independently of Pillar 1!');
     setTimeout(() => setSettingsSavedBanner(null), 3500);
   };
 
@@ -972,7 +1085,7 @@ const targetTitle = isDirectEnrollmentCheckout
       if (!ctx) return;
 
       canvas.width = 2000;
-      canvas.height = 1414;
+      canvas.height = 1414; 
 
       ctx.fillStyle = '#060A14';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -981,6 +1094,17 @@ const targetTitle = isDirectEnrollmentCheckout
       ctx.lineWidth = 12;
       ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
 
+      ctx.strokeStyle = '#FDE68A';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(60, 60, canvas.width - 120, canvas.height - 120);
+
+      const cornerSize = 80;
+      ctx.fillStyle = '#F59E0B';
+      ctx.beginPath(); ctx.moveTo(40, 40); ctx.lineTo(40 + cornerSize, 40); ctx.lineTo(40, 40 + cornerSize); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(canvas.width - 40, 40); ctx.lineTo(canvas.width - 40 - cornerSize, 40); ctx.lineTo(canvas.width - 40, 40 + cornerSize); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(40, canvas.height - 40); ctx.lineTo(40 + cornerSize, canvas.height - 40); ctx.lineTo(40, canvas.height - 40 - cornerSize); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(canvas.width - 40, canvas.height - 40); ctx.lineTo(canvas.width - 40 - cornerSize, canvas.height - 40); ctx.lineTo(canvas.width - 40, canvas.height - 40 - cornerSize); ctx.fill();
+
       ctx.textAlign = 'center';
       ctx.fillStyle = '#FDE68A';
       ctx.font = 'bold 60px serif';
@@ -988,7 +1112,9 @@ const targetTitle = isDirectEnrollmentCheckout
 
       ctx.fillStyle = '#9CA3AF';
       ctx.font = '30px sans-serif';
+      ctx.letterSpacing = '5px';
       ctx.fillText('OFFICIAL CHARTER OF DIGITAL & AFFILIATE MASTERY', canvas.width / 2, 260);
+      ctx.letterSpacing = '0px';
 
       ctx.fillStyle = '#9CA3AF';
       ctx.font = '40px serif';
@@ -999,21 +1125,142 @@ const targetTitle = isDirectEnrollmentCheckout
       const formattedName = certificateStudentName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
       ctx.fillText(formattedName, canvas.width / 2, 550);
 
-      canvas.toBlob((blob) => {
-        if (!blob) return;
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `EarnMega-Certificate-${certificateCode}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        setDownloadSuccessBanner('Official High-Res Certificate downloaded!');
-        setTimeout(() => setDownloadSuccessBanner(null), 4000);
-      }, 'image/png');
+      const nameWidth = ctx.measureText(formattedName).width;
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo((canvas.width - nameWidth) / 2 - 40, 580);
+      ctx.lineTo((canvas.width + nameWidth) / 2 + 40, 580);
+      ctx.stroke();
+
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = '36px sans-serif';
+      ctx.fillText('has successfully mastered all 5 rigorous examination modules with', canvas.width / 2, 680);
+      ctx.fillText('Distinction (90%+ Standard) in', canvas.width / 2, 740);
+
+      const courseTitle = INITIAL_PRODUCTS.find(p => p.id === examProductId)?.title || "Digital Marketing Academy";
+      ctx.fillStyle = '#34D399';
+      ctx.font = 'bold 50px sans-serif';
+      ctx.fillText(courseTitle, canvas.width / 2, 820);
+
+      ctx.fillStyle = '#D1D5DB';
+      ctx.font = '28px sans-serif';
+      ctx.textAlign = 'left';
+      const pillarsX = canvas.width / 2 - 450;
+      ctx.fillText('✓ Attribution & Funnel Architecture', pillarsX, 940);
+      ctx.fillText('✓ High-Converting Traffic Engineering', pillarsX, 1000);
+
+      const pillarsRightX = canvas.width / 2 + 100;
+      ctx.fillText('✓ WhatsApp & Social Closing Mastery', pillarsRightX, 940);
+      ctx.fillText('✓ Ethical Governance & Compliance', pillarsRightX, 1000);
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#FDE68A';
+      ctx.font = 'italic 50px serif';
+      ctx.fillText('Gee Mings', 400, 1180);
+      ctx.strokeStyle = '#6B7280';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(250, 1200); ctx.lineTo(550, 1200); ctx.stroke();
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = '20px sans-serif';
+      ctx.fillText('GEE MINGS • FOUNDER & CEO, EARNMEGA', 400, 1230);
+
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, 1180, 80, 0, Math.PI * 2);
+      const gradient = ctx.createRadialGradient(canvas.width / 2, 1180, 10, canvas.width / 2, 1180, 80);
+      gradient.addColorStop(0, '#FDE68A');
+      gradient.addColorStop(1, '#B45309');
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.strokeStyle = '#FEF3C7';
+      ctx.lineWidth = 4;
+      ctx.stroke();
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText('100% VERIFIED', canvas.width / 2, 1165);
+      ctx.fillText('DISTINCTION', canvas.width / 2, 1195);
+      ctx.font = '16px sans-serif';
+      ctx.fillText('SEAL • EARNMEGA', canvas.width / 2, 1220);
+
+      const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent('https://www.earnmega.com/affiliate?verify=' + certificateCode)}`;
+
+      const drawRightFooter = (qrImg?: HTMLImageElement) => {
+        if (qrImg) {
+          ctx.drawImage(qrImg, canvas.width - 460, 1110, 120, 120);
+        }
+        ctx.fillStyle = '#9CA3AF';
+        ctx.font = '24px monospace';
+        ctx.fillText(`DATE ISSUED: ${new Date().toLocaleDateString()}`, canvas.width - 400, 1260);
+        ctx.fillText(`CREDENTIAL ID: ${certificateCode}`, canvas.width - 400, 1290);
+
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `EarnMega-Certificate-${certificateCode}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          setDownloadSuccessBanner('Official High-Res Certificate downloaded!');
+          setTimeout(() => setDownloadSuccessBanner(null), 4000);
+        }, 'image/png');
+      };
+
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => drawRightFooter(img);
+      img.onerror = () => drawRightFooter();
+      img.src = qrDataUrl;
+
     } catch (e) {
       console.error('Error generating certificate:', e);
+    }
+  };
+
+  const handleDownloadQrCode = async (linkUrl: string, labelName?: string) => {
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=16&data=${encodeURIComponent(linkUrl)}`;
+    const filename = `EarnMega-QR-${(labelName || 'link').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
+
+    try {
+      const res = await fetch(qrApiUrl);
+      if (!res.ok) throw new Error('Network response was not ok');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      setDownloadSuccessBanner('✓ QR Code saved to your device!');
+      setTimeout(() => setDownloadSuccessBanner(null), 4000);
+    } catch (e) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 600;
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        if (ctx) ctx.drawImage(img, 0, 0, 600, 600);
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          setDownloadSuccessBanner('✓ QR Code saved to your device!');
+          setTimeout(() => setDownloadSuccessBanner(null), 4000);
+        }, 'image/png');
+      };
+      img.src = qrApiUrl;
     }
   };
 
@@ -1043,6 +1290,18 @@ const targetTitle = isDirectEnrollmentCheckout
         const newCertCode = `EM-CERT-${Math.floor(100000 + Math.random() * 900000)}`;
         setCertificateCode(newCertCode);
         setCertificateUnlocked(true);
+        const selectedCourse =
+          products.find((p) => p.id === examProductId) || INITIAL_PRODUCTS[0];
+        try {
+          await supabase.from('affiliate_certificates').insert({
+            user_id: userId,
+            student_name: `${firstName} ${lastName}`.trim(),
+            product_id: selectedCourse.id,
+            product_title: selectedCourse.title,
+            certificate_code: newCertCode,
+            final_score_percent: scorePercent
+          });
+        } catch (_) {}
       }
     }
   };
@@ -1065,6 +1324,27 @@ const targetTitle = isDirectEnrollmentCheckout
         payout_details: contestBankMomoDetails,
         sales_count: totalSalesCount
       });
+
+      await fetch('/api/affiliate/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type,
+          payload: {
+            fullName: contestFullName || `${firstName} ${lastName}`,
+            affiliateCode: userAffiliateCode,
+            email: pillar2Email,
+            phone: contestPhone || pillar2Phone,
+            contestTitle: isViral
+              ? '100K Views TikTok/IG Promotional Video Challenge (GH₵ 10,000)'
+              : 'EarnMega 50-Sales Velocity Challenge',
+            socialHandle: contestSocialHandle,
+            videoUrl: contestVideoUrl,
+            payoutDetails: contestBankMomoDetails,
+            salesCount: totalSalesCount
+          }
+        })
+      });
     } catch (_) {}
 
     if (!isViral) {
@@ -1073,14 +1353,31 @@ const targetTitle = isDirectEnrollmentCheckout
     setContestModalOpen(null);
     setContestStatusBanner(
       isViral
-        ? `🎉 Your 100K Views Video application has been sent to earnmegadesk@gmail.com!`
-        : `✅ You are officially registered for the Sales Challenge!`
+        ? `🎉 Your 100K Views Video application has been sent to ${SUPPORT_EMAIL_PRIMARY}!`
+        : `✅ You are officially registered for the Sales Challenge! Details sent to ${SUPPORT_EMAIL_PRIMARY}.`
     );
   };
 
   const triggerAdminMilestoneAlert = async () => {
+    try {
+      await fetch('/api/affiliate/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'CONTEST_GOAL_REACHED_ADMIN_ALERT',
+          payload: {
+            fullName: `${firstName} ${lastName}`,
+            affiliateCode: userAffiliateCode,
+            email: pillar2Email,
+            phone: pillar2Phone,
+            contestTitle: '50-Sales Velocity Target Reached!',
+            salesCount: totalSalesCount
+          }
+        })
+      });
+    } catch (_) {}
     setAdminMilestoneAlertSent(true);
-    alert(`🚨 Admin Command Centre Alert Dispatched to earnmegadesk@gmail.com!`);
+    alert(`🚨 Admin Command Centre Alert Dispatched to ${SUPPORT_EMAIL_PRIMARY}!`);
   };
 
   const isFridayGMT = useMemo(() => new Date().getUTCDay() === 5, []);
@@ -1089,8 +1386,38 @@ const targetTitle = isDirectEnrollmentCheckout
     setLicenseActivatedAt(Date.now());
     setLicenseExpiresAt(Date.now() + 365 * 24 * 60 * 60 * 1000);
     expiryAlertSentRef.current = false;
+
+    const txItem = {
+      id: `renew-${Date.now()}`,
+      orderUid: `REN-${Math.floor(100000 + Math.random() * 900000)}`,
+      reference: `EM_REN_${Date.now()}`,
+      productTitle: "Annual Affiliate License Renewal (1 Year)",
+      amountGHS: 45,
+      commissionGHS: 0,
+      buyerName: firstName + " " + lastName,
+      buyerEmail: pillar2Email,
+      buyerPhone: pillar2Phone,
+      date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      status: 'VERIFIED'
+    };
+    setTransactions((prev) => [txItem, ...prev]);
+
+    try {
+      await fetch('/api/affiliate/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'LICENSE_RENEWAL_CONFIRMED',
+          payload: {
+            subject: `✅ Affiliate GH₵ 45 Renewal Confirmed (${pillar2Email})`,
+            message: `User: ${firstName} ${lastName}\nAffiliate ID: ${userAffiliateCode}\nStatus: The user has successfully paid their GH₵ 45.00 annual renewal fee. Access has been restored for another 365 days.`
+          }
+        })
+      });
+    } catch (_) {}
+
     setIsRenewalModalOpen(false);
-    alert('✅ License Successfully Renewed for 1 Year!');
+    alert('✅ License Successfully Renewed for 1 Year!\n\nYour EarnMega Affiliate Dashboard has been unlocked. Keep building!');
   };
 
   const handleConfirmDeposit = async (e: React.FormEvent) => {
@@ -1111,13 +1438,40 @@ const targetTitle = isDirectEnrollmentCheckout
       } catch (_) {}
     }
 
+    const txItem = {
+      id: `dep-${Date.now()}`,
+      orderUid: `DEP-${Math.floor(100000 + Math.random() * 900000)}`,
+      reference: `EM_DEP_${Date.now()}`,
+      productTitle: "Wallet Deposit (Instant Top-Up)",
+      amountGHS: addedGHS,
+      commissionGHS: addedGHS,
+      buyerName: firstName + " " + lastName,
+      buyerEmail: pillar2Email,
+      buyerPhone: pillar2Phone,
+      date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      status: 'VERIFIED'
+    };
+    setTransactions((prev) => [txItem, ...prev]);
+
+    setNotificationsList((prev) => [
+      {
+        id: `notif-dep-${Date.now()}`,
+        title: "💰 Deposit Confirmed",
+        subtitle: `GH₵ ${addedGHS.toFixed(2)} has been credited to your Available Balance.`,
+        amountGHS: addedGHS,
+        timeAgo: 'Just now',
+        read: false
+      },
+      ...prev
+    ]);
+
     setIsDepositModalOpen(false);
     setDepositStep(1);
     setDepositVerifyCode('');
     setDepositAmountGHS('');
     setIsGeneratingCode(false);
 
-    setDownloadSuccessBanner(`✓ Deposit of GH₵ ${addedGHS.toFixed(2)} confirmed!`);
+    setDownloadSuccessBanner(`✓ Deposit of GH₵ ${addedGHS.toFixed(2)} confirmed! Available Balance updated immediately.`);
     setTimeout(() => setDownloadSuccessBanner(null), 4000);
   };
 
@@ -1138,30 +1492,157 @@ const targetTitle = isDirectEnrollmentCheckout
       return;
     }
 
+    const detailsStr =
+      payoutChannel === 'MOBILE_MONEY'
+        ? `${momoNetwork} - ${momoNumber}`
+        : payoutChannel === 'BANK_TRANSFER'
+        ? `${bankName} - ${bankAccount}`
+        : `USDT (TRC20) - ${usdtAddress}`;
+
     setIsSubmittingPayout(true);
     try {
+      await fetch('/api/affiliate/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'FRIDAY_PAYOUT_REQUEST',
+          payload: {
+            affiliateName: `${firstName} ${lastName} (${accountHolderName})`,
+            affiliateCode: userAffiliateCode,
+            affiliateEmail: pillar2Email,
+            phone: pillar2Phone,
+            amount,
+            payoutChannel,
+            accountDetails: detailsStr
+          }
+        })
+      });
+
       setAvailableBalanceGHS((prev) => prev - amount);
       setWithdrawnBalanceGHS((prev) => prev + amount);
       setPayoutAmountGHS('');
       setPayoutFeedback({
         type: 'success',
-        text: `✅ Payout request of GH₵ ${amount.toFixed(2)} sent to earnmegadesk@gmail.com for Friday Paystack Transfer!`
+        text: `✅ Payout request of GH₵ ${amount.toFixed(2)} sent to ${SUPPORT_EMAIL_PRIMARY} for Friday Paystack Transfer!`
       });
     } catch (_) {
       setPayoutFeedback({
         type: 'error',
-        text: 'Could not dispatch request.'
+        text: 'Could not dispatch request. Please check your internet connection.'
       });
     } finally {
       setIsSubmittingPayout(false);
     }
   };
 
+  useEffect(() => {
+    try {
+      const storedLicenseStr = localStorage.getItem(`earnmega_p2_license_${userId || 'guest'}`);
+      if (storedLicenseStr) {
+        const parsed = JSON.parse(storedLicenseStr);
+        if (parsed.licenseActivatedAt) setLicenseActivatedAt(parsed.licenseActivatedAt);
+        if (parsed.licenseExpiresAt) setLicenseExpiresAt(parsed.licenseExpiresAt);
+      }
+    } catch (_) {}
+  }, [userId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`earnmega_p2_license_${userId || 'guest'}`, JSON.stringify({
+        licenseActivatedAt,
+        licenseExpiresAt
+      }));
+    } catch (_) {}
+  }, [licenseActivatedAt, licenseExpiresAt, userId]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = Date.now();
+      const remainingMs = licenseExpiresAt - now;
+
+      if (remainingMs <= 0) {
+        setTimeRemaining({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true });
+
+        if (!expiryAlertSentRef.current) {
+          expiryAlertSentRef.current = true;
+          const sendAlert = async () => {
+             try {
+                await fetch('/api/affiliate/notify', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    type: 'LICENSE_EXPIRED_KICKOUT_ALERT',
+                    payload: {
+                      subject: `🚨 [ADMIN CONTROL ALERT] Affiliate 1-Year License Expired — Kick Out & Require GH₵ 45 Renewal (${currentProfile?.email || pillar2Email})`,
+                      message: `User: ${firstName} ${lastName}\nPaid Email: ${currentProfile?.email || pillar2Email}\nAffiliate ID: ${userAffiliateCode}\nPhone: ${pillar2Phone}\nStatus: User has been automatically locked out of Pillar 2 Affiliate Hub until they complete their GH₵ 45.00 annual renewal.`
+                    }
+                  })
+                });
+             } catch (_) {}
+          };
+          sendAlert();
+        }
+      } else {
+        const days = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+        setTimeRemaining({ days, hours, minutes, seconds, expired: false });
+        expiryAlertSentRef.current = false;
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [licenseExpiresAt, firstName, lastName, currentProfile?.email, pillar2Email, userAffiliateCode, pillar2Phone]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('earnmega_p2_state_v3');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.availableBalanceGHS !== undefined) setAvailableBalanceGHS(parsed.availableBalanceGHS);
+        if (parsed.totalEarningsGHS !== undefined) setTotalEarningsGHS(parsed.totalEarningsGHS);
+        if (parsed.withdrawnBalanceGHS !== undefined) setWithdrawnBalanceGHS(parsed.withdrawnBalanceGHS);
+        if (parsed.totalSalesCount !== undefined) setTotalSalesCount(parsed.totalSalesCount);
+        if (parsed.totalClicksCount !== undefined) setTotalClicksCount(parsed.totalClicksCount);
+        if (parsed.transactions !== undefined) setTransactions(parsed.transactions);
+        if (parsed.unlockedProductIds !== undefined) setUnlockedProductIds(parsed.unlockedProductIds);
+        if (parsed.notificationsList !== undefined) setNotificationsList(parsed.notificationsList);
+        if (parsed.abandonedLeads !== undefined) setAbandonedLeads(parsed.abandonedLeads);
+      }
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('earnmega_p2_state_v3', JSON.stringify({
+        availableBalanceGHS,
+        totalEarningsGHS,
+        withdrawnBalanceGHS,
+        totalSalesCount,
+        totalClicksCount,
+        transactions,
+        unlockedProductIds,
+        notificationsList,
+        abandonedLeads
+      }));
+    } catch (_) {}
+  }, [availableBalanceGHS, totalEarningsGHS, withdrawnBalanceGHS, totalSalesCount, totalClicksCount, transactions, unlockedProductIds, notificationsList, abandonedLeads]);
+
   const handleAiBotSend = (customPrompt?: string) => {
     const query = (customPrompt || aiInput).trim();
     if (!query) return;
 
-    let reply = `RECOMMENDATION:\nTo maximize conversions on "${query}", pair your offer with a **1-Click Order Bump** at checkout and automated WhatsApp customer sync.`;
+    const lower = query.toLowerCase();
+    let reply = '';
+
+    if (lower === 'hi' || lower === 'hello' || lower === 'hey' || lower.includes('good morning') || lower.includes('good afternoon')) {
+      reply = `Hello ${firstName}! 👋 Welcome to the EarnMega AI Business Brain. You can ask me anything about EarnMega, your unique product links, Friday payouts, or how to close more sales!`;
+    } else if (lower.includes('earnmega') || lower.includes('commission') || lower.includes('payout') || lower.includes('friday') || lower.includes('link')) {
+      reply = `On EarnMega Pillar 2, every product by Gee Mings pays an instant 50% commission into your Available Balance the moment Paystack verifies payment. Your unique tracking link (${userAffiliateCode}) records the buyer's Full Name, Gmail, and Unique Order ID. Withdrawals are processed every Friday to Mobile Money, Bank, or USDT via ${SUPPORT_EMAIL_PRIMARY}!`;
+    } else {
+      reply = `RECOMMENDATION:\nTo maximize conversions on "${query}", pair your offer with a **1-Click Order Bump** at checkout, enable automated WhatsApp customer sync, and offer an affiliate commission of 50% to incentivize top promoters!\n\nWant me to write the complete WhatsApp broadcast sequence or TikTok hook for this?`;
+    }
+
     setAiMessages((prev) => [...prev, { sender: 'user', text: query }, { sender: 'bot', text: reply }]);
     if (!customPrompt) setAiInput('');
   };
@@ -1209,18 +1690,82 @@ const targetTitle = isDirectEnrollmentCheckout
               Referred by: <strong>{referredByCode}</strong> • Product: <strong>{p.shortCode}</strong>
             </span>
           </div>
-          <button
-            onClick={() => setActiveSalesPageProduct(null)}
-            className="text-xs bg-amber-500 hover:bg-amber-400 text-black font-bold px-3 py-1 rounded-lg"
-          >
-            ← Return to Affiliate Hub
-          </button>
+          <div className="flex items-center gap-2">
+            {p.externalSalesPageUrl && (
+              <a
+                href={`${p.externalSalesPageUrl}?ref=${referredByCode}&prod=${p.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg flex items-center gap-1"
+              >
+                <span>Open External Vercel Page</span>
+                <ExternalLink className="w-3.5 h-3.5"/>
+              </a>
+            )}
+            <button
+              onClick={() => setActiveSalesPageProduct(null)}
+              className="text-xs bg-amber-500 hover:bg-amber-400 text-black font-bold px-3 py-1 rounded-lg"
+            >
+              ← Return to Affiliate Hub
+            </button>
+          </div>
         </div>
 
         <div className="max-w-3xl mx-auto px-4 py-10">
           <div className="bg-[#0d1322] border border-emerald-500/30 rounded-3xl p-6 md:p-10 shadow-2xl">
-            <h1 className="text-2xl md:text-4xl font-black text-white leading-tight mb-4">{p.headline}</h1>
-            <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-6">{p.subheadline}</p>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30">
+                {p.category} • Official Access Portal
+              </span>
+              <span className="text-xs text-gray-400">
+                Created by <strong className="text-amber-400">{p.creator}</strong>
+              </span>
+            </div>
+
+            <h1 className="text-2xl md:text-4xl font-black text-white leading-tight mb-4">
+              {p.headline}
+            </h1>
+            <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-6">
+              {p.subheadline}
+            </p>
+
+            <div className="bg-[#131b2e] border border-white/10 rounded-2xl p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <span className="text-[11px] text-gray-400 uppercase block">
+                  Package Price (Includes Course + EarnMega Affiliate Account)
+                </span>
+                <div className="text-2xl font-black text-emerald-400 mt-0.5">
+                  {formatAmount(p.priceGHS)}{' '}
+                  <span className="text-xs text-gray-400 font-mono">
+                    (Payable: GH₵ {p.priceGHS.toFixed(2)})
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-amber-400"/>
+                <select
+                  value={selectedCurrency}
+                  onChange={(e) => setSelectedCurrency(e.target.value)}
+                  className="bg-black/50 border border-white/15 rounded-xl px-3 py-2 text-xs text-white"
+                >
+                  {Object.values(GLOBAL_CURRENCIES).map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} ({c.symbol}) - {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-8">
+              {p.bullets.map((b, i) => (
+                <div key={i} className="flex items-start gap-3 bg-black/30 border border-white/5 rounded-xl p-3.5">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"/>
+                  <span className="text-xs md:text-sm text-gray-200">{b}</span>
+                </div>
+              ))}
+            </div>
+
             <button
               onClick={() => openDigitstemCheckoutForProduct(p)}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-black font-black text-base shadow-lg shadow-emerald-500/25 transition-all"
@@ -1250,10 +1795,14 @@ const targetTitle = isDirectEnrollmentCheckout
             <button
               onClick={() => setIsDrawerOpen(true)}
               className="p-2.5 rounded-xl bg-[#141d30] hover:bg-[#1c2842] border border-white/10 text-white transition-all"
+              aria-label="Open All Features Menu"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-5 h-5"/>
             </button>
-            <div onClick={() => setActiveSection('dashboard')} className="cursor-pointer flex items-center gap-2">
+            <div
+              onClick={() => setActiveSection('dashboard')}
+              className="cursor-pointer flex items-center gap-2"
+            >
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center font-black text-black text-sm">
                 EM
               </div>
@@ -1267,23 +1816,26 @@ const targetTitle = isDirectEnrollmentCheckout
           </div>
 
           <div className="flex items-center gap-2">
-            <select
-              value={selectedCurrency}
-              onChange={(e) => setSelectedCurrency(e.target.value)}
-              className="bg-[#141d30] border border-white/10 rounded-full px-3 py-1.5 text-xs font-bold text-white focus:outline-none cursor-pointer"
-            >
-              {Object.values(GLOBAL_CURRENCIES).map((curr) => (
-                <option key={curr.code} value={curr.code} className="bg-[#0d1322] text-white">
-                  {curr.code} ({curr.symbol})
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-1.5 bg-[#141d30] border border-white/10 rounded-full px-3 py-1.5">
+              <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0"/>
+              <select
+                value={selectedCurrency}
+                onChange={(e) => setSelectedCurrency(e.target.value)}
+                className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer max-w-[115px] sm:max-w-[160px]"
+              >
+                {Object.values(GLOBAL_CURRENCIES).map((curr) => (
+                  <option key={curr.code} value={curr.code} className="bg-[#0d1322] text-white">
+                    {curr.code} ({curr.symbol}) • {curr.region}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <button
               onClick={() => setIsNotificationsOpen(true)}
               className="relative p-2.5 rounded-full bg-[#141d30] hover:bg-[#1c2842] border border-white/10 text-white transition-all"
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-4 h-4"/>
               <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full">
                 {unreadNotifCount}
               </span>
@@ -1305,6 +1857,15 @@ const targetTitle = isDirectEnrollmentCheckout
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem("earnmega_target_pillar");
+                      window.location.href = "/";
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-xs transition-all mr-2"
+                  >
+                    ← Hub
+                  </button>
                   <div className="w-8 h-8 rounded-lg bg-emerald-500 text-black font-black flex items-center justify-center">
                     EM
                   </div>
@@ -1313,46 +1874,139 @@ const targetTitle = isDirectEnrollmentCheckout
                     <span className="text-[10px] text-emerald-400 font-mono">ID: {userAffiliateCode}</span>
                   </div>
                 </div>
-                <button onClick={() => setIsDrawerOpen(false)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300">
-                  <X className="w-4 h-4" />
+                <button
+                  onClick={() => setIsDrawerOpen(false)}
+                  className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300"
+                >
+                  <X className="w-4 h-4"/>
                 </button>
               </div>
 
-              <div className="space-y-5 text-xs mt-4">
-                {[
-                  { id: 'dashboard', label: 'Performance Hub', icon: BarChart3 },
-                  { id: 'marketplace', label: 'Affiliate Marketplace', icon: ShoppingBag },
-                  { id: 'links', label: 'Link Manager & Shortener', icon: Share2 },
-                  { id: 'exam', label: '5-Step Exam & Certificate', icon: Award },
-                  { id: 'contests', label: 'Milestones & Contests', icon: Trophy },
-                  { id: 'payouts', label: 'Friday Wallet & Withdrawals', icon: DollarSign },
-                  { id: 'ledger', label: 'Financial Sales Ledger', icon: FileText },
-                  { id: 'vault', label: 'TikTok & WhatsApp Swipe Vault', icon: MessageSquare },
-                  { id: 'leads_crm', label: 'Abandoned Checkout Leads CRM', icon: Users },
-                  { id: 'calculator', label: 'Profit Simulator', icon: Calculator },
-                  { id: 'creator', label: 'Creator Whitelist Portal', icon: Briefcase },
-                  { id: 'rules', label: 'Official Rules & Regulations', icon: ShieldCheck },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setActiveSection(item.id as ActiveSection);
-                        setIsDrawerOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-all mb-1 ${
-                        activeSection === item.id
-                          ? 'bg-indigo-600/25 text-indigo-300 border border-indigo-500/40'
-                          : 'text-gray-300 hover:bg-white/5'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
+              <div className="my-4 bg-[#141d30] border border-white/10 rounded-xl p-3">
+                <span className="text-[10px] text-gray-400 uppercase font-mono block">
+                  ACTIVE WORKSPACE
+                </span>
+                <span className="text-sm font-bold text-white">Affiliate & Creator Hub</span>
               </div>
+
+              <div className="space-y-5 text-xs">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 px-2 block mb-1.5">
+                    CONSOLE
+                  </span>
+                  {[
+                    { id: 'dashboard', label: 'Performance Hub', icon: BarChart3 },
+                    { id: 'contests', label: 'Milestones & Contests (100K Views)', icon: Trophy },
+                    { id: 'exam', label: '5-Step Exam & Certificate', icon: Award },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setActiveSection(item.id as ActiveSection);
+                          setIsDrawerOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-all mb-1 ${
+                          activeSection === item.id
+                            ? 'bg-indigo-600/25 text-indigo-300 border border-indigo-500/40'
+                            : 'text-gray-300 hover:bg-white/5'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4"/>
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 px-2 block mb-1.5">
+                    REVENUE & MARKETING
+                  </span>
+                  {[
+                    { id: 'marketplace', label: 'Affiliate Marketplace', icon: ShoppingBag },
+                    { id: 'links', label: 'Link Manager & Shortener', icon: Share2 },
+                    { id: 'ai_tools', label: 'WhatsApp Closer & Bio-Link', icon: Zap },
+                    { id: 'vault', label: 'TikTok & WhatsApp Swipe Vault', icon: MessageSquare },
+                    { id: 'leads_crm', label: 'Abandoned Checkout Leads CRM', icon: Users },
+                    { id: 'calculator', label: 'Profit Simulator', icon: Calculator },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setActiveSection(item.id as ActiveSection);
+                          setIsDrawerOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-all mb-1 ${
+                          activeSection === item.id
+                            ? 'bg-indigo-600/25 text-indigo-300 border border-indigo-500/40'
+                            : 'text-gray-300 hover:bg-white/5'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4"/>
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 px-2 block mb-1.5">
+                    FINANCES & GOVERNANCE
+                  </span>
+                  {[
+                    { id: 'payouts', label: 'Friday Wallet & Withdrawals', icon: DollarSign },
+                    { id: 'ledger', label: 'Financial Sales Ledger', icon: FileText },
+                    { id: 'creator', label: 'Creator Whitelist Requirements Site', icon: Briefcase },
+                    { id: 'rules', label: 'Official Rules & Regulations Site', icon: ShieldCheck },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setActiveSection(item.id as ActiveSection);
+                          setIsDrawerOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-all mb-1 ${
+                          activeSection === item.id
+                            ? 'bg-indigo-600/25 text-indigo-300 border border-indigo-500/40'
+                            : 'text-gray-300 hover:bg-white/5'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4"/>
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/10 space-y-2">
+              <button
+                onClick={() => {
+                  setIsDrawerOpen(false);
+                  setActiveSettingsModal('profile');
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-300 hover:bg-white/5"
+              >
+                <Settings className="w-4 h-4 text-emerald-400"/>
+                <span>Pillar 2 Profile & Settings</span>
+              </button>
+              <button
+                onClick={() => {
+                  setIsDrawerOpen(false);
+                  openDirectPillar2EnrollmentCheckout();
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/20"
+              >
+                <Sparkles className="w-4 h-4"/>
+                <span>Test Direct Entry Checkout (GH₵ 90)</span>
+              </button>
             </div>
           </div>
           <div className="flex-1" onClick={() => setIsDrawerOpen(false)} />
@@ -1373,48 +2027,1899 @@ const targetTitle = isDirectEnrollmentCheckout
           </div>
         )}
 
+        {/* SECTION 1: DASHBOARD */}
         {activeSection === 'dashboard' && (
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h1 className="text-2xl md:text-3xl font-black text-white">Welcome back, {firstName} 👋</h1>
-                <p className="text-xs text-gray-400 mt-1">EarnMega Affiliate Command Centre • ID: <span className="text-emerald-400 font-mono font-bold">{userAffiliateCode}</span></p>
+                <h1 className="text-2xl md:text-3xl font-black text-white">
+                  Welcome back, {firstName} 👋
+                </h1>
+                <p className="text-xs text-gray-400 mt-1">
+                  "Small daily execution compounds into extraordinary results. 🔥" • ID:{' '}
+                  <span className="text-emerald-400 font-mono font-bold">{userAffiliateCode}</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  onClick={() => setIsNotificationsOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-[#141d30] hover:bg-[#1b263f] border border-white/10 text-xs font-bold flex items-center gap-2"
+                >
+                  <Bell className="w-4 h-4 text-rose-400"/>
+                  <span>Notifications</span>
+                  <span className="bg-rose-500 text-white text-[10px] px-2 py-0.5 rounded-full">
+                    {unreadNotifCount}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveSettingsModal('pillar2_onboarding')}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-bold"
+                >
+                  Edit Pillar 2 Profile
+                </button>
               </div>
             </div>
 
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                  AFFILIATE MILESTONE PROGRESS
+                </span>
+                <span className="text-xs font-bold bg-emerald-500/15 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30">
+                  🚀 {currentTier.label}
+                </span>
+              </div>
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-2xl">
+                  🚀
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">{currentTier.label}</h3>
+                  <p className="text-xs text-gray-400">Next: {nextTier.label}</p>
+                </div>
+              </div>
+              <div className="flex justify-between text-xs text-gray-400 mb-1.5">
+                <span>Milestone Progress</span>
+                <span className="font-bold text-emerald-400">{milestonePercent}%</span>
+              </div>
+              <div className="w-full h-2.5 bg-black/50 rounded-full overflow-hidden mb-2">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all"
+                  style={{ width: `${Math.max(5, milestonePercent)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-[11px] text-gray-400 font-mono">
+                <span>Earned: {formatAmount(totalEarningsGHS)}</span>
+                <span>Goal: {formatAmount(milestoneGoalGHS)}</span>
+              </div>
+            </div>
+
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-5 shadow-xl relative overflow-hidden">
+               <div className="flex items-center justify-between mb-4 relative z-10">
+                 <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                   AFFILIATE ANNUAL LICENSE & RENEWAL TIMER
+                 </span>
+                 {timeRemaining.expired ? (
+                    <span className="text-[10px] font-black bg-rose-500/20 text-rose-400 px-3 py-1 rounded-full border border-rose-500/30">
+                      🔴 LICENSE EXPIRED — ACCESS LOCKED
+                    </span>
+                 ) : timeRemaining.days <= 14 ? (
+                    <span className="text-[10px] font-black bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full border border-orange-500/30 animate-pulse">
+                      🟠 EXPIRING SOON — RENEW FOR GH₵ 45
+                    </span>
+                 ) : (
+                    <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30">
+                      🟢 ACTIVE 1-YEAR LICENSE
+                    </span>
+                 )}
+               </div>
+
+               <div className="grid grid-cols-4 gap-2 mb-4 relative z-10">
+                 {[
+                   { label: 'DAYS', val: timeRemaining.days },
+                   { label: 'HOURS', val: timeRemaining.hours.toString().padStart(2, '0') },
+                   { label: 'MINS', val: timeRemaining.minutes.toString().padStart(2, '0') },
+                   { label: 'SECS', val: timeRemaining.seconds.toString().padStart(2, '0') }
+                 ].map((t, idx) => (
+                   <div key={idx} className="bg-[#141d30] border border-emerald-500/20 rounded-xl p-3 flex flex-col items-center justify-center">
+                     <span className="text-2xl md:text-3xl font-black text-emerald-400 font-mono tracking-wider">{t.val}</span>
+                     <span className="text-[9px] font-bold text-gray-500 uppercase mt-1">{t.label}</span>
+                   </div>
+                 ))}
+               </div>
+
+               <div className="bg-black/30 border border-white/5 rounded-xl p-3 mb-4 relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-2 text-[10px] font-medium text-gray-400">
+                 <div>
+                   <span className="block mb-1">First-Time Registration: <span className="line-through">GH₵ 90.00 / Yr</span></span>
+                   <span className="block text-emerald-300">Discounted Renewal Rate: GH₵ 45.00 / Yr (50% OFF)</span>
+                 </div>
+                 <div className="text-left md:text-right font-mono bg-white/5 px-2 py-1 rounded">
+                   Expires: {new Date(licenseExpiresAt).toLocaleDateString()}
+                 </div>
+               </div>
+
+               <div className="flex flex-col md:flex-row gap-3 relative z-10">
+                 <button
+                   onClick={() => setIsRenewalModalOpen(true)}
+                   className="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                 >
+                   Renew / Extend +1 Year (GH₵ 45.00)
+                 </button>
+                 <button
+                   onClick={() => setLicenseExpiresAt(Date.now() - 1000)}
+                   className="md:w-auto px-4 py-3 rounded-xl bg-[#141d30] hover:bg-[#1b263f] border border-rose-500/30 text-rose-400 font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+                 >
+                   <Clock className="w-3.5 h-3.5"/> ⚡ Simulate 1-Year Expiry (Test Lock)
+                 </button>
+               </div>
+            </div>
+
             <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 rounded-3xl p-6 shadow-xl">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-100 block">AVAILABLE BALANCE</span>
-              <div className="text-3xl md:text-4xl font-black text-white mt-1 mb-2">{formatAmount(availableBalanceGHS)}</div>
-              <button
-                onClick={() => setActiveSection('payouts')}
-                className="py-3 px-6 rounded-xl bg-white hover:bg-gray-100 text-indigo-950 font-black text-xs transition-all"
-              >
-                Pay Out Now (Friday)
-              </button>
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-100 block">
+                AVAILABLE BALANCE
+              </span>
+              <div className="text-3xl md:text-4xl font-black text-white mt-1 mb-2">
+                {formatAmount(availableBalanceGHS)}
+              </div>
+              <p className="text-xs text-indigo-100 mb-5 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-300"/>
+                <span>Payout ready • Settles in GH₵ ({availableBalanceGHS.toFixed(2)} GHS)</span>
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <button
+                  onClick={() => setIsDepositModalOpen(true)}
+                  className="py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:brightness-110 text-black font-black text-xs transition-all flex items-center justify-center gap-1 shadow-lg shadow-amber-500/20"
+                >
+                  + Deposit Funds 💳
+                </button>
+                <button
+                  onClick={() => setActiveSection('marketplace')}
+                  className="py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs transition-all"
+                >
+                  Promote Products
+                </button>
+                <button
+                  onClick={() => setActiveSection('payouts')}
+                  className="py-3 col-span-2 md:col-span-1 rounded-xl bg-white hover:bg-gray-100 text-indigo-950 font-black text-xs transition-all"
+                >
+                  Pay Out Now (Friday)
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div onClick={() => setActiveSection("ledger")} className="bg-[#0f172a] border border-white/10 rounded-2xl p-4 cursor-pointer hover:border-emerald-500/50 transition-all">
+                <span className="text-xs text-gray-400 block">Total Earnings</span>
+                <span className="text-xl font-black text-white mt-1 block">
+                  {formatAmount(totalEarningsGHS)}
+                </span>
+                <span className="text-[11px] text-emerald-400 mt-1 block">↑ Instant 50% Split</span>
+              </div>
+              <div onClick={() => setActiveSection("ledger")} className="bg-[#0f172a] border border-white/10 rounded-2xl p-4 cursor-pointer hover:border-emerald-500/50 transition-all">
+                <span className="text-xs text-gray-400 block">Total Sales</span>
+                <span className="text-xl font-black text-white mt-1 block">{totalSalesCount}</span>
+                <span className="text-[11px] text-indigo-400 mt-1 block">Verified Paystack</span>
+              </div>
+              <div onClick={() => setActiveSection("payouts")} className="bg-[#0f172a] border border-white/10 rounded-2xl p-4 cursor-pointer hover:border-emerald-500/50 transition-all">
+                <span className="text-xs text-gray-400 block">Withdrawn Earnings</span>
+                <span className="text-xl font-black text-white mt-1 block">
+                  {formatAmount(withdrawnBalanceGHS)}
+                </span>
+                <span className="text-[11px] text-gray-400 mt-1 block">↓ Friday Transfers</span>
+              </div>
+              <div onClick={() => setActiveSection("links")} className="bg-[#0f172a] border border-white/10 rounded-2xl p-4 cursor-pointer hover:border-emerald-500/50 transition-all">
+                <span className="text-xs text-gray-400 block">Link Clicks</span>
+                <span className="text-xl font-black text-white mt-1 block">{totalClicksCount}</span>
+                <span className="text-[11px] text-amber-400 mt-1 block">Active Tracking</span>
+              </div>
+            </div>
+
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-5">
+              <h3 className="text-sm font-black text-white mb-4 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-emerald-400"/>
+                <span>Quick Action Hub (1-Tap Access)</span>
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {[
+                  { label: 'Marketplace', sub: '6 Verified Offers', icon: ShoppingBag, target: 'marketplace', color: 'text-emerald-400' },
+                  { label: 'Link Shortener', sub: 'Unique Links & QR', icon: Share2, target: 'links', color: 'text-indigo-400' },
+                  { label: 'Withdraw Funds', sub: 'Friday Payout Desk', icon: DollarSign, target: 'payouts', color: 'text-rose-400' },
+                  { label: 'Help / Support', sub: '24/7 Agent Desk', icon: HelpCircle, target: 'support', color: 'text-sky-400' },
+                ].map((action, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveSection(action.target as any)}
+                    className="flex flex-col items-center justify-center p-4 bg-[#141d30] border border-white/5 rounded-2xl hover:bg-[#1b263f] hover:border-white/10 transition-all text-center group"
+                  >
+                    <div className={`w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform ${action.color}`}>
+                      <action.icon className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-bold text-white mb-0.5">{action.label}</span>
+                    <span className="text-[10px] text-gray-500">{action.sub}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {activeSection === 'marketplace' && (
+        {/* SECTION 2: MARKETPLACE */}
+        {activeSection === "marketplace" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-black text-white">Affiliate Marketplace</h2>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+              <h2 className="text-2xl font-black text-white">Affiliate Marketplace</h2>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={marketSearch}
+                  onChange={(e) => setMarketSearch(e.target.value)}
+                  className="px-4 py-2 bg-[#141d30] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50"
+                />
+                <select
+                  value={marketFilter}
+                  onChange={(e) => setMarketFilter(e.target.value)}
+                  className="px-4 py-2 bg-[#141d30] border border-white/10 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50"
+                >
+                  {["All Offers", "Top Pick", "High Converting", "Wealth & Finance", "Business & Marketing"].map(opt => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredMarketplaceProducts.map((p) => (
-                <div key={p.id} className="bg-[#0f172a] border border-white/10 rounded-3xl p-5 flex flex-col h-full">
-                  <h3 className="text-lg font-bold text-white mb-1">{p.title}</h3>
-                  <span className="text-xs text-gray-400 mb-4">By <span className="text-emerald-400 font-mono">{p.creator}</span></span>
-                  <div className="mt-auto space-y-2">
-                    <button onClick={() => openDigitstemCheckoutForProduct(p)} className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs transition-all">
-                      Checkout ({formatAmount(p.priceGHS)})
+                <div key={p.id} className="bg-[#0f172a] border border-white/10 rounded-3xl p-5 hover:border-emerald-500/50 transition-all flex flex-col h-full group relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px] group-hover:bg-emerald-500/10 transition-colors pointer-events-none" />
+
+                  <div className="flex flex-wrap gap-2 mb-4 relative z-10">
+                    {p.badges.map((badge, idx) => (
+                      <span key={idx} className={`text-[10px] font-black px-2 py-1 rounded-md ${
+                        badge.includes('TOP PICK') ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                        badge.includes('HIGH CONVERTING') ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                        'bg-white/10 text-gray-300 border border-white/10'
+                      }`}>
+                        {badge.includes('TOP PICK') && '★ '}
+                        {badge.includes('HIGH CONVERTING') && '🔥 '}
+                        {badge}
+                      </span>
+                    ))}
+                    <span className="text-[10px] font-black px-2 py-1 rounded-md bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 flex items-center gap-1">
+                      {p.rating} ★
+                    </span>
+                  </div>
+
+                  <h3 className="text-lg font-bold text-white leading-tight mb-1 relative z-10">{p.title}</h3>
+                  <span className="text-xs text-gray-400 mb-6 block relative z-10">By <span className="text-emerald-400 font-mono font-medium">{p.creator}</span></span>
+
+                  <div className="grid grid-cols-2 gap-3 mb-6 relative z-10">
+                    <div className="bg-[#141d30] rounded-xl p-3 border border-white/5">
+                      <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Price</span>
+                      <span className="text-sm font-black text-white">{formatAmount(p.priceGHS)}</span>
+                    </div>
+                    <div className="bg-emerald-500/10 rounded-xl p-3 border border-emerald-500/20">
+                      <span className="text-[10px] text-emerald-500 uppercase font-bold block mb-1">{p.commissionPercent}% Commission</span>
+                      <span className="text-sm font-black text-emerald-400">{formatAmount(p.priceGHS * (p.commissionPercent / 100))}</span>
+                    </div>
+                    <div className="bg-[#141d30] rounded-xl p-3 border border-white/5">
+                      <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Est. EPC</span>
+                      <span className="text-sm font-bold text-gray-300">{p.epc}</span>
+                    </div>
+                    <div className="bg-[#141d30] rounded-xl p-3 border border-white/5">
+                      <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Conv. Rate</span>
+                      <span className="text-sm font-bold text-gray-300">{p.conversionRate}</span>
+                    </div>
+                  </div>
+
+                  <div className="mb-6 relative z-10">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase mb-1.5 block">Your Unique Link</label>
+                    <div className="flex bg-[#141d30] border border-white/10 rounded-xl overflow-hidden">
+                      <input
+                        type="text"
+                        readOnly
+                        value={getUniqueProductAffiliateLink(p)}
+                        className="flex-1 bg-transparent px-3 py-2.5 text-xs text-gray-300 font-mono outline-none"
+                      />
+                      <button
+                        onClick={() => handleCopy(getUniqueProductAffiliateLink(p), p.id)}
+                        className={`px-4 flex items-center justify-center transition-colors border-l border-white/10 ${copiedKey === p.id ? 'bg-emerald-500 text-black' : 'bg-white/5 hover:bg-white/10 text-white'}`}
+                      >
+                        {copiedKey === p.id ? <CheckCircle2 className="w-4 h-4"/> : <Copy className="w-4 h-4"/>}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto space-y-2 relative z-10">
+                    <button onClick={() => setPromoteModalProduct(p)} className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition-all shadow-[0_0_15px_rgba(79,70,229,0.2)]">
+                      Promote Studio 🚀
                     </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button onClick={() => setActiveSalesPageProduct(p)} className="py-2.5 rounded-xl bg-[#141d30] hover:bg-[#1b263f] border border-white/10 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5"/> Sales Page
+                      </button>
+                      <button onClick={() => openDigitstemCheckoutForProduct(p)} className="py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)] flex items-center justify-center gap-1.5">
+                        {unlockedProductIds.includes(p.id) ? <Folder className="w-3.5 h-3.5"/> : <CreditCard className="w-3.5 h-3.5"/>}
+                        {unlockedProductIds.includes(p.id) ? 'Open Drive' : 'Checkout'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         )}
-      </main>
-    </div>
-  );
-}
 
+        {/* SECTION 3: LINKS & QR MANAGER */}
+        {activeSection === "links" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                <Share2 className="w-5 h-5 text-indigo-400"/>
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-white">Link Manager & Traffic Tagging</h2>
+                <p className="text-sm text-gray-400">Generate unique tracking links, add Sub-IDs, and download QR codes.</p>
+              </div>
+            </div>
+
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-6">
+               <div className="space-y-6">
+                 {INITIAL_PRODUCTS.map(p => {
+                    const baseLink = getUniqueProductAffiliateLink(p);
+                    const tagId = `tag-${p.id}`;
+                    const tagVal = linkTags[tagId] || '';
+                    const finalLink = tagVal ? `${baseLink}&sub=${encodeURIComponent(tagVal)}` : baseLink;
+
+                    return (
+                      <div key={p.id} className="p-5 bg-[#141d30] border border-white/5 hover:border-indigo-500/30 rounded-2xl transition-all">
+                        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
+                          <div>
+                            <span className="text-sm font-black text-white block mb-1">{p.title}</span>
+                            <span className="text-xs text-emerald-400 font-mono flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3"/> Auto-tracked to {userAffiliateCode}
+                            </span>
+                          </div>
+                          <button onClick={() => setPromoteModalProduct(p)} className="self-start text-xs font-bold bg-indigo-500/10 text-indigo-400 px-3 py-1.5 rounded-lg border border-indigo-500/20 hover:bg-indigo-500/20">
+                            Open Promote Studio
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-[1fr_200px] gap-3 mb-3">
+                           <div className="flex bg-[#0b111e] border border-white/10 rounded-xl overflow-hidden">
+                             <input
+                               type="text"
+                               readOnly
+                               value={finalLink}
+                               className="flex-1 bg-transparent px-3 py-2.5 text-xs text-gray-300 font-mono outline-none"
+                             />
+                             <button
+                               onClick={() => handleCopy(finalLink, p.id)}
+                               className={`px-4 flex items-center justify-center transition-colors border-l border-white/10 ${copiedKey === p.id ? 'bg-indigo-500 text-white' : 'bg-white/5 hover:bg-white/10 text-white'}`}
+                             >
+                               {copiedKey === p.id ? 'Copied!' : <Copy className="w-4 h-4"/>}
+                             </button>
+                           </div>
+                           <input
+                             type="text"
+                             placeholder="Sub-ID Tag (e.g. tiktok_bio)"
+                             value={tagVal}
+                             onChange={(e) => setLinkTags(prev => ({...prev, [tagId]: e.target.value}))}
+                             className="w-full bg-[#0b111e] border border-white/10 px-3 py-2.5 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50"
+                           />
+                        </div>
+                      </div>
+                    )
+                 })}
+               </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 4: SWIPE VAULT */}
+        {activeSection === "vault" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center">
+                <MessageSquare className="w-5 h-5 text-rose-400"/>
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-white">Promotional Swipe Vault</h2>
+                <p className="text-sm text-gray-400">High-converting copy for WhatsApp, TikTok & IG.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6">
+              {INITIAL_PRODUCTS.map(p => (
+                <div key={p.id} className="bg-[#0f172a] border border-white/10 rounded-3xl overflow-hidden group">
+                  <div className="bg-[#141d30] px-6 py-4 border-b border-white/5 flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-emerald-400">{p.title} Scripts</h3>
+                    <span className="text-xs font-mono bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md">Tested & Proven</span>
+                  </div>
+                  <div className="p-6 space-y-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-2"><Video className="w-3.5 h-3.5"/> TikTok / Reels Hook</span>
+                        <button onClick={() => handleCopy(p.swipeCopy.tiktok[0], `tk-${p.id}`)} className="text-[10px] font-bold text-gray-400 hover:text-white flex items-center gap-1">
+                          {copiedKey === `tk-${p.id}` ? <CheckCircle2 className="w-3 h-3 text-emerald-400"/> : <Copy className="w-3 h-3"/>} Copy
+                        </button>
+                      </div>
+                      <div className="p-4 bg-[#0b111e] rounded-xl border border-white/5 relative">
+                        <p className="text-sm text-gray-300 italic">"{p.swipeCopy.tiktok[0]}"</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#25D366] flex items-center gap-2"><MessageSquare className="w-3.5 h-3.5"/> WhatsApp Status / DM</span>
+                        <button
+                          onClick={() => handleCopy(p.swipeCopy.whatsapp[0].replace("{LINK}", getUniqueProductAffiliateLink(p)), `wa-${p.id}`)}
+                          className="text-[10px] font-bold text-gray-400 hover:text-white flex items-center gap-1"
+                        >
+                          {copiedKey === `wa-${p.id}` ? <CheckCircle2 className="w-3 h-3 text-emerald-400"/> : <Copy className="w-3 h-3"/>} Copy
+                        </button>
+                      </div>
+                      <div className="p-4 bg-[#0b111e] rounded-xl border border-white/5">
+                        <p className="text-sm text-gray-300 whitespace-pre-wrap">
+                          {p.swipeCopy.whatsapp[0].replace("{LINK}", getUniqueProductAffiliateLink(p))}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 5: EXAM & CERTIFICATION */}
+        {activeSection === "exam" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <Award className="w-5 h-5 text-amber-400"/>
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-white">Certification Academy</h2>
+                <p className="text-sm text-gray-400">Pass the 5-Step Exam (90% required) to earn your Official Certificate.</p>
+              </div>
+            </div>
+
+            <div className="bg-[#0f172a] border border-white/10 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <label className="text-xs text-gray-400 block mb-1">Select Certification Course</label>
+                <select
+                  value={examProductId}
+                  onChange={(e) => {
+                    setExamProductId(e.target.value);
+                    setCurrentExamStep(1);
+                    setUnlockedExamStep(1);
+                    setExamAnswers({});
+                    setExamStepResult(null);
+                    setCertificateUnlocked(false);
+                  }}
+                  className="bg-[#141d30] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none min-w-[250px]"
+                >
+                  {INITIAL_PRODUCTS.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                </select>
+              </div>
+              <button
+                onClick={() => setCertificateUnlocked(true)}
+                className="text-xs font-bold text-amber-400 bg-amber-500/10 px-4 py-2 rounded-xl border border-amber-500/20 hover:bg-amber-500/20"
+              >
+                Preview Certificate
+              </button>
+            </div>
+
+            {certificateUnlocked ? (
+              <div className="bg-[#060A14] border-2 border-amber-400/80 rounded-3xl p-8 md:p-16 text-center relative overflow-hidden shadow-[0_0_50px_rgba(245,158,11,0.15)]">
+                <div className="absolute inset-0 border-[4px] border-amber-500/30 m-3 pointer-events-none rounded-2xl"></div>
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent opacity-50 pointer-events-none"></div>
+
+                <div className="flex justify-center mb-6 relative z-10">
+                  <div className="w-16 h-16 bg-amber-500/10 rounded-full border-2 border-amber-500/50 flex items-center justify-center">
+                    <Award className="w-8 h-8 text-amber-400"/>
+                  </div>
+                </div>
+
+                <h1 className="text-3xl md:text-5xl font-serif text-amber-400 mb-2 relative z-10 font-bold uppercase tracking-widest">EarnMega Executive Academy</h1>
+                <p className="text-gray-400 uppercase tracking-[0.2em] text-xs md:text-sm mb-10 relative z-10 font-medium">Official Charter of Digital & Affiliate Mastery</p>
+
+                <p className="text-gray-400 mb-4 relative z-10 text-sm tracking-widest uppercase">This proudly certifies that</p>
+                <div className="relative inline-block mb-10 z-10">
+                  <input
+                    type="text"
+                    value={certificateStudentName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase())}
+                    onChange={(e) => setCertificateStudentName(e.target.value)}
+                    className="text-4xl md:text-6xl font-serif italic font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 text-center focus:outline-none w-full max-w-2xl px-8 pb-2"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-70"></div>
+                </div>
+
+                <p className="text-gray-400 mb-2 relative z-10 text-sm md:text-base">has successfully mastered all 5 rigorous examination modules with</p>
+                <p className="text-gray-400 mb-6 relative z-10 text-sm md:text-base">Distinction (90%+ Standard) in</p>
+
+                <h2 className="text-2xl md:text-4xl font-bold text-emerald-400 mb-12 relative z-10 drop-shadow-md">
+                  {INITIAL_PRODUCTS.find(p => p.id === examProductId)?.title || "Digital Marketing Academy"}
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto mb-16 relative z-10 text-left px-8">
+                  <div className="bg-black/30 border border-white/5 rounded-xl p-3 flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0"/>
+                    <span className="text-sm text-gray-300">Attribution & Funnel Architecture</span>
+                  </div>
+                  <div className="bg-black/30 border border-white/5 rounded-xl p-3 flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0"/>
+                    <span className="text-sm text-gray-300">High-Converting Traffic Engineering</span>
+                  </div>
+                  <div className="bg-black/30 border border-white/5 rounded-xl p-3 flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0"/>
+                    <span className="text-sm text-gray-300">WhatsApp & Social Closing Mastery</span>
+                  </div>
+                  <div className="bg-black/30 border border-white/5 rounded-xl p-3 flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0"/>
+                    <span className="text-sm text-gray-300">Ethical Governance & Compliance</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8 max-w-4xl mx-auto relative z-10 px-8">
+                  <div className="text-center w-48">
+                    <div className="border-b-2 border-gray-600 pb-2 mb-2">
+                      <span className="font-serif italic text-3xl text-amber-200 block -mb-1">Gee Mings</span>
+                    </div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Gee Mings • Founder & CEO, EarnMega</p>
+                  </div>
+
+                  <div className="relative w-32 h-32 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.5)] border-2 border-amber-200 flex items-center justify-center">
+                       <div className="w-28 h-28 border border-amber-900/30 rounded-full flex flex-col items-center justify-center p-2 text-center bg-gradient-to-br from-amber-400 to-amber-600">
+                         <span className="text-[10px] font-black text-amber-950 uppercase tracking-widest block mb-0.5">100% Verified</span>
+                         <span className="text-xs font-black text-amber-950 uppercase tracking-widest block mb-1">Distinction</span>
+                         <span className="text-[8px] font-bold text-amber-900 uppercase tracking-widest">Seal • EarnMega</span>
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="text-center md:text-right flex flex-col items-center md:items-end w-48">
+                    <div className="w-20 h-20 bg-white p-1 rounded mb-2">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent('https://www.earnmega.com/affiliate?verify=' + (certificateCode || 'EM-CERT'))}`}
+                        alt="Verification QR"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-mono">Date Issued: {new Date().toLocaleDateString()}</p>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-mono">Credential ID: {certificateCode || `EM-CERT-${Math.floor(100000 + Math.random() * 900000)}`}</p>
+                  </div>
+                </div>
+
+                <div className="mt-16 flex flex-col sm:flex-row justify-center gap-4 relative z-10">
+                  <button onClick={handleDownloadCertificate} className="px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+                    <Download className="w-4 h-4"/> Download / Print Official Certificate
+                  </button>
+                  <button onClick={() => window.location.href = `mailto:${SUPPORT_EMAIL_PRIMARY}?subject=Certificate%20Verification`} className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold flex items-center justify-center gap-2 border border-white/10">
+                    <Upload className="w-4 h-4"/> Submit Proof to Admin
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-6 md:p-8">
+                <div className="flex justify-between items-center mb-8 relative">
+                  <div className="absolute top-1/2 left-0 w-full h-1 bg-white/5 -translate-y-1/2 z-0"></div>
+                  <div className="absolute top-1/2 left-0 h-1 bg-emerald-500 -translate-y-1/2 z-0 transition-all" style={{ width: `${(currentExamStep - 1) * 25}%` }}></div>
+
+                  {[1, 2, 3, 4, 5].map(step => (
+                    <button
+                      key={step}
+                      disabled={step > unlockedExamStep}
+                      onClick={() => {
+                        setCurrentExamStep(step as any);
+                        setExamAnswers({});
+                        setExamStepResult(null);
+                      }}
+                      className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all border-4 border-[#0f172a] ${
+                        step === currentExamStep ? 'bg-emerald-500 text-black scale-110 shadow-[0_0_15px_rgba(16,185,129,0.5)]' :
+                        step < currentExamStep ? 'bg-emerald-400 text-black' :
+                        step <= unlockedExamStep ? 'bg-[#141d30] text-emerald-400 border-emerald-500/30' :
+                        'bg-[#141d30] text-gray-600 border-white/5 cursor-not-allowed'
+                      }`}
+                    >
+                      {step < currentExamStep ? <CheckCircle2 className="w-5 h-5"/> : step <= unlockedExamStep ? step : <Lock className="w-4 h-4"/>}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl font-black text-emerald-400 mb-2">{FIVE_STEP_EXAM_BANK[currentExamStep].title}</h3>
+                  <p className="text-sm text-gray-400">{FIVE_STEP_EXAM_BANK[currentExamStep].subtitle}</p>
+                </div>
+
+                {examStepResult && (
+                  <div className={`p-6 rounded-2xl border mb-8 text-center ${examStepResult.passed ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
+                    <h4 className="text-xl font-black mb-2">
+                      {examStepResult.passed ? '🎉 Step Passed!' : '❌ Score Below 90%'}
+                    </h4>
+                    <p className="text-sm font-bold mb-1">Score: {examStepResult.correctCount}/{examStepResult.total} — {examStepResult.scorePercent}%</p>
+                    {!examStepResult.passed ? (
+                      <p className="text-xs opacity-80 mt-2">You must score 90% or higher to unlock the next step. Please review and retake.</p>
+                    ) : currentExamStep === 5 ? (
+                      <p className="text-xs opacity-80 mt-2">Congratulations! You have passed all 5 steps and unlocked your certificate!</p>
+                    ) : (
+                      <p className="text-xs opacity-80 mt-2">Excellent! You may now proceed to Step {currentExamStep + 1}.</p>
+                    )}
+                  </div>
+                )}
+
+                <form onSubmit={handleGradeExamStep} className="space-y-8">
+                  {FIVE_STEP_EXAM_BANK[currentExamStep].questions.map((q, idx) => (
+                    <div key={idx} className="bg-[#141d30] p-5 rounded-2xl border border-white/5">
+                      <p className="font-bold text-white mb-4 text-sm md:text-base"><span className="text-emerald-400 mr-2">{idx + 1}.</span>{q.q}</p>
+                      <div className="space-y-2">
+                        {q.options.map((opt, optIdx) => (
+                          <label
+                            key={optIdx}
+                            className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
+                              examAnswers[idx] === optIdx
+                                ? 'bg-emerald-500/10 border-emerald-500/50'
+                                : 'bg-[#0b111e] border-white/5 hover:border-white/20'
+                            }`}
+                          >
+                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                              examAnswers[idx] === optIdx ? 'border-emerald-500 bg-emerald-500' : 'border-gray-600'
+                            }`}>
+                              {examAnswers[idx] === optIdx && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                            </div>
+                            <span className={`text-sm ${examAnswers[idx] === optIdx ? 'text-emerald-300 font-medium' : 'text-gray-300'}`}>{opt}</span>
+                            <input
+                              type="radio"
+                              name={`q-${currentExamStep}-${idx}`}
+                              className="hidden"
+                              checked={examAnswers[idx] === optIdx}
+                              onChange={() => {
+                                setExamAnswers(prev => ({...prev, [idx]: optIdx}));
+                                setExamStepResult(null);
+                              }}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {!examStepResult?.passed && (
+                     <button
+                       type="submit"
+                       disabled={Object.keys(examAnswers).length < 10}
+                       className="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-black transition-all text-lg shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+                     >
+                       {examStepResult ? 'Retake Step' : `Submit Step ${currentExamStep} Answers for Instant Grading`}
+                     </button>
+                  )}
+                  {examStepResult?.passed && currentExamStep < 5 && (
+                     <button
+                       type="button"
+                       onClick={() => {
+                         setCurrentExamStep((currentExamStep + 1) as any);
+                         setExamAnswers({});
+                         setExamStepResult(null);
+                       }}
+                       className="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black transition-all text-lg shadow-[0_0_20px_rgba(79,70,229,0.3)]"
+                     >
+                       Proceed to Step {currentExamStep + 1} →
+                     </button>
+                  )}
+                  {examStepResult?.passed && currentExamStep === 5 && (
+                     <button
+                       type="button"
+                       onClick={() => setCertificateUnlocked(true)}
+                       className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black transition-all text-lg shadow-[0_0_20px_rgba(245,158,11,0.3)] flex items-center justify-center gap-2"
+                     >
+                       <Award className="w-5 h-5"/> Claim Official EarnMega Certificate
+                     </button>
+                  )}
+                </form>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* SECTION 6: CONTESTS */}
+        {activeSection === "contests" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                <Trophy className="w-5 h-5 text-cyan-400"/>
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-white">Contests Arena</h2>
+                <p className="text-sm text-gray-400">Win cash, gadgets, and exclusive bonuses.</p>
+              </div>
+            </div>
+
+            {contestStatusBanner && (
+              <div className="bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 p-4 rounded-2xl text-sm font-bold flex justify-between items-center">
+                <span>{contestStatusBanner}</span>
+                <button onClick={() => setContestStatusBanner(null)}><X className="w-4 h-4"/></button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-gradient-to-br from-[#0f172a] to-[#141d30] border border-cyan-500/30 rounded-3xl p-6 relative overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.1)]">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-[50px]"></div>
+                <div className="inline-block px-3 py-1 bg-cyan-500/20 text-cyan-400 text-xs font-black rounded-full mb-4 border border-cyan-500/30">
+                  CASH BOUNTY
+                </div>
+                <h3 className="text-2xl font-black text-white mb-2">TikTok & IG 100K Views Challenge</h3>
+                <p className="text-sm text-gray-400 mb-6">Create a promotional video for EarnMega. If it hits 100,000 views, you win!</p>
+
+                <div className="bg-black/40 rounded-2xl p-4 mb-6 border border-white/5">
+                  <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Grand Prize</span>
+                  <span className="text-3xl font-black text-cyan-400">{formatAmount(10000)}</span>
+                </div>
+
+                <button
+                  onClick={() => setContestModalOpen('viral_100k')}
+                  className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-black transition-all flex items-center justify-center gap-2"
+                >
+                  <Video className="w-4 h-4"/> Register & Submit 100K Video
+                </button>
+              </div>
+
+              <div className="bg-gradient-to-br from-[#0f172a] to-[#141d30] border border-amber-500/30 rounded-3xl p-6 relative overflow-hidden shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-[50px]"></div>
+                <div className="inline-block px-3 py-1 bg-amber-500/20 text-amber-400 text-xs font-black rounded-full mb-4 border border-amber-500/30">
+                  VELOCITY SPRINT
+                </div>
+                <h3 className="text-2xl font-black text-white mb-2">50-Sales Executive Sprint</h3>
+                <p className="text-sm text-gray-400 mb-6">Hit 50 confirmed sales to unlock the bonus and Executive Trophy.</p>
+
+                <div className="bg-black/40 rounded-2xl p-4 mb-6 border border-white/5">
+                  <div className="flex justify-between items-end mb-2">
+                    <div>
+                       <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Bonus Prize</span>
+                       <span className="text-2xl font-black text-amber-400">{formatAmount(3500)}</span>
+                    </div>
+                    <div className="text-right">
+                       <span className="text-lg font-black text-white">{totalSalesCount} / 50</span>
+                       <span className="text-xs text-gray-500 block">Sales</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-amber-600 to-amber-400" style={{ width: `${Math.min(100, (totalSalesCount / 50) * 100)}%` }}></div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {!registeredContests.includes('sales_50') ? (
+                    <button
+                      onClick={() => setContestModalOpen('sales_50')}
+                      className="flex-1 py-3 rounded-xl bg-[#141d30] hover:bg-[#1b263f] border border-white/10 text-white font-black transition-all"
+                    >
+                      Register for 50-Sales Sprint
+                    </button>
+                  ) : totalSalesCount >= 50 ? (
+                    <button
+                      onClick={triggerAdminMilestoneAlert}
+                      disabled={adminMilestoneAlertSent}
+                      className="flex-1 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black transition-all animate-pulse shadow-[0_0_20px_rgba(245,158,11,0.4)] disabled:animate-none disabled:bg-gray-600 disabled:text-gray-400 flex items-center justify-center gap-2"
+                    >
+                      {adminMilestoneAlertSent ? 'Alert Dispatched ✓' : '🚨 Goal Reached! Alert Admin Command Centre'}
+                    </button>
+                  ) : (
+                    <button disabled className="flex-1 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black cursor-not-allowed">
+                      Registered! Keep Selling.
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-[#0f172a] to-[#141d30] border border-emerald-500/30 rounded-3xl p-6 relative overflow-hidden shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-[50px]"></div>
+                <div className="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-black rounded-full mb-4 border border-emerald-500/30">
+                  GRAND PRODUCER
+                </div>
+                <h3 className="text-2xl font-black text-white mb-2">100-Sales Grand Producer Challenge</h3>
+                <p className="text-sm text-gray-400 mb-6">Hit 100 sales to win a MacBook Pro M3 + Cash.</p>
+
+                <div className="bg-black/40 rounded-2xl p-4 mb-6 border border-white/5">
+                  <div className="flex justify-between items-end mb-2">
+                    <div>
+                       <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Grand Prize</span>
+                       <span className="text-lg font-black text-emerald-400">MacBook Pro + {formatAmount(10000)}</span>
+                    </div>
+                    <div className="text-right">
+                       <span className="text-lg font-black text-white">{totalSalesCount} / 100</span>
+                       <span className="text-xs text-gray-500 block">Sales</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400" style={{ width: `${Math.min(100, (totalSalesCount / 100) * 100)}%` }}></div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setContestModalOpen('sales_100')}
+                  className="w-full py-3 rounded-xl bg-[#141d30] hover:bg-[#1b263f] border border-white/10 text-white font-black transition-all"
+                >
+                  Register for 100-Sales Challenge
+                </button>
+              </div>
+
+              <div className="bg-gradient-to-br from-[#0f172a] to-[#141d30] border border-purple-500/30 rounded-3xl p-6 relative overflow-hidden shadow-[0_0_30px_rgba(168,85,247,0.1)]">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 blur-[50px]"></div>
+                <div className="inline-block px-3 py-1 bg-purple-500/20 text-purple-400 text-xs font-black rounded-full mb-4 border border-purple-500/30">
+                  WEEKLY POOL
+                </div>
+                <h3 className="text-2xl font-black text-white mb-2">Weekly Friday Fast-Start Top 3 Pool</h3>
+                <p className="text-sm text-gray-400 mb-6">Hit 15 sales this week to enter the GH₵ 2,000 pool.</p>
+
+                <div className="bg-black/40 rounded-2xl p-4 mb-6 border border-white/5">
+                  <div className="flex justify-between items-end mb-2">
+                    <div>
+                       <span className="text-xs text-gray-500 uppercase font-bold block mb-1">Pool Prize</span>
+                       <span className="text-xl font-black text-purple-400">{formatAmount(2000)} / Week</span>
+                    </div>
+                    <div className="text-right">
+                       <span className="text-lg font-black text-white">{totalSalesCount} / 15</span>
+                       <span className="text-xs text-gray-500 block">Weekly</span>
+                    </div>
+                  </div>
+                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-purple-600 to-purple-400" style={{ width: `${Math.min(100, (totalSalesCount / 15) * 100)}%` }}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 7: PAYOUTS (FRIDAY DESK) */}
+        {activeSection === "payouts" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-emerald-400"/>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-black text-white">Friday Payout Desk</h2>
+                  <p className="text-sm text-gray-400">Withdraw your commissions (Minimum GH₵ 90).</p>
+                </div>
+              </div>
+              <div className={`px-3 py-1.5 rounded-full border text-xs font-bold ${isFridayGMT ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
+                {isFridayGMT ? '🟢 Window Open' : '🔴 Opens Friday GMT'}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 rounded-3xl p-6 md:p-8 shadow-xl">
+                  <span className="text-xs font-bold uppercase tracking-wider text-indigo-100 block mb-2">AVAILABLE BALANCE</span>
+                  <div className="text-4xl md:text-5xl font-black text-white mb-6">
+                    {formatAmount(availableBalanceGHS)}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 border-t border-white/20 pt-6">
+                    <div>
+                      <span className="text-[10px] text-indigo-200 block uppercase font-bold mb-1">Total Earned</span>
+                      <span className="text-lg font-bold text-white">{formatAmount(totalEarningsGHS)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-indigo-200 block uppercase font-bold mb-1">Total Withdrawn</span>
+                      <span className="text-lg font-bold text-white">{formatAmount(withdrawnBalanceGHS)}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsDepositModalOpen(true)}
+                    className="w-full mt-6 py-4 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:brightness-110 text-black font-black text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+                  >
+                    + Deposit Funds 💳
+                  </button>
+                </div>
+
+                <div className="bg-[#0f172a] border border-white/10 rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400"/> Payout Rules
+                  </h3>
+                  <ul className="text-xs text-gray-400 space-y-2">
+                    <li>• Payouts are processed manually every Friday via Paystack Transfer.</li>
+                    <li>• Ensure your Name matches your Mobile Money / Bank account exactly.</li>
+                    <li>• Minimum withdrawal is GH₵ 90.00.</li>
+                    <li>• USDT TRC20 withdrawals are settled at live market rates.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-6 md:p-8">
+                {payoutFeedback && (
+                  <div className={`p-4 rounded-xl mb-6 text-sm font-bold border ${payoutFeedback.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'}`}>
+                    {payoutFeedback.text}
+                  </div>
+                )}
+
+                <form onSubmit={handleFridayPayoutSubmit} className="space-y-5">
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Amount to Withdraw (GH₵)</label>
+                    <input
+                      type="number"
+                      min="90"
+                      step="0.01"
+                      required
+                      value={payoutAmountGHS}
+                      onChange={(e) => setPayoutAmountGHS(e.target.value)}
+                      placeholder="e.g. 1500"
+                      className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-lg text-white font-black placeholder-gray-600 focus:outline-none focus:border-emerald-500/50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Payout Channel</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'MOBILE_MONEY', label: 'MoMo' },
+                        { id: 'BANK_TRANSFER', label: 'Bank' },
+                        { id: 'USDT_TRC20', label: 'USDT' }
+                      ].map(chan => (
+                        <button
+                          key={chan.id}
+                          type="button"
+                          onClick={() => setPayoutChannel(chan.id as any)}
+                          className={`py-3 rounded-xl text-xs font-bold border transition-all ${
+                            payoutChannel === chan.id
+                              ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-400'
+                              : 'bg-[#141d30] border-white/10 text-gray-400 hover:bg-white/5'
+                          }`}
+                        >
+                          {chan.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Account Holder Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={accountHolderName}
+                      onChange={(e) => setAccountHolderName(e.target.value)}
+                      placeholder="Name registered on the account"
+                      className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50"
+                    />
+                  </div>
+
+                  {payoutChannel === 'MOBILE_MONEY' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Network</label>
+                        <select
+                          value={momoNetwork}
+                          onChange={(e) => setMomoNetwork(e.target.value)}
+                          className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50"
+                        >
+                          <option>MTN MoMo</option>
+                          <option>Telecel Cash</option>
+                          <option>AT Money</option>
+                          <option>MPesa</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Phone Number</label>
+                        <input
+                          type="text"
+                          required
+                          value={momoNumber}
+                          onChange={(e) => setMomoNumber(e.target.value)}
+                          placeholder="024XXXXXXX"
+                          className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {payoutChannel === 'BANK_TRANSFER' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Bank Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={bankName}
+                          onChange={(e) => setBankName(e.target.value)}
+                          placeholder="e.g. GTBank, Zenith"
+                          className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Account Number</label>
+                        <input
+                          type="text"
+                          required
+                          value={bankAccount}
+                          onChange={(e) => setBankAccount(e.target.value)}
+                          placeholder="Account Number"
+                          className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {payoutChannel === 'CRYPTO_USDT' && (
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">USDT TRC20 Address</label>
+                      <input
+                        type="text"
+                        required
+                        value={usdtAddress}
+                        onChange={(e) => setUsdtAddress(e.target.value)}
+                        placeholder="T..."
+                        className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white font-mono focus:outline-none focus:border-emerald-500/50"
+                      />
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isSubmittingPayout}
+                    className="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black transition-all text-lg shadow-[0_0_20px_rgba(16,185,129,0.2)] disabled:bg-gray-600 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isSubmittingPayout ? (
+                       <RefreshCcw className="w-5 h-5 animate-spin"/>
+                    ) : (
+                       <DollarSign className="w-5 h-5"/>
+                    )}
+                    {isSubmittingPayout ? 'Processing...' : 'Submit Payout Request'}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 8: CALCULATOR (PROFIT SIMULATOR) */}
+        {activeSection === "calculator" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <Calculator className="w-5 h-5 text-blue-400"/>
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-white">Income Simulator</h2>
+                <p className="text-sm text-gray-400">Calculate your potential earnings.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-6 md:p-8">
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase block mb-2">Select Product to Simulate</label>
+                    <select
+                      value={calcProductId}
+                      onChange={(e) => setCalcProductId(e.target.value)}
+                      className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-blue-500/50"
+                    >
+                      {INITIAL_PRODUCTS.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                     <div className="flex justify-between items-center mb-2">
+                       <label className="text-xs font-bold text-gray-400 uppercase">Sales per Day</label>
+                       <span className="text-xl font-black text-blue-400">{calcDailySales}</span>
+                     </div>
+                     <input
+                       type="range"
+                       min="1"
+                       max="50"
+                       value={calcDailySales}
+                       onChange={(e) => setCalcDailySales(Number(e.target.value))}
+                       className="w-full accent-blue-500 h-2 bg-[#141d30] rounded-lg appearance-none cursor-pointer"
+                     />
+                     <div className="flex justify-between mt-2 text-[10px] text-gray-500 font-mono">
+                       <span>1</span>
+                       <span>50</span>
+                     </div>
+                  </div>
+
+                  <div className="p-4 bg-[#141d30] rounded-2xl border border-white/5">
+                     <div className="flex justify-between items-center text-sm">
+                       <span className="text-gray-400">Commission per Sale:</span>
+                       <span className="font-bold text-white">
+                         {formatAmount(INITIAL_PRODUCTS.find(p => p.id === calcProductId)?.priceGHS! * (INITIAL_PRODUCTS.find(p => p.id === calcProductId)?.commissionPercent! / 100))}
+                       </span>
+                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-[#0f172a] to-[#141d30] border border-blue-500/30 rounded-3xl p-6 md:p-8 shadow-[0_0_30px_rgba(59,130,246,0.1)] flex flex-col justify-center">
+                 <h3 className="text-lg font-bold text-white mb-6 text-center">Projected Income</h3>
+
+                 <div className="space-y-4">
+                   <div className="bg-black/30 rounded-2xl p-4 flex justify-between items-center border border-white/5">
+                     <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">Daily</span>
+                     <span className="text-xl font-black text-white">
+                       {formatAmount(calcDailySales * (INITIAL_PRODUCTS.find(p => p.id === calcProductId)?.priceGHS! * (INITIAL_PRODUCTS.find(p => p.id === calcProductId)?.commissionPercent! / 100)))}
+                     </span>
+                   </div>
+                   <div className="bg-blue-500/10 rounded-2xl p-5 flex justify-between items-center border border-blue-500/30 transform scale-[1.02] shadow-lg">
+                     <span className="text-sm text-blue-300 font-bold uppercase tracking-wider flex items-center gap-2"><CalendarDays className="w-4 h-4"/> Monthly (30 days)</span>
+                     <span className="text-3xl font-black text-blue-400">
+                       {formatAmount(calcDailySales * 30 * (INITIAL_PRODUCTS.find(p => p.id === calcProductId)?.priceGHS! * (INITIAL_PRODUCTS.find(p => p.id === calcProductId)?.commissionPercent! / 100)))}
+                     </span>
+                   </div>
+                   <div className="bg-black/30 rounded-2xl p-4 flex justify-between items-center border border-white/5">
+                     <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">Annually</span>
+                     <span className="text-xl font-black text-white">
+                       {formatAmount(calcDailySales * 365 * (INITIAL_PRODUCTS.find(p => p.id === calcProductId)?.priceGHS! * (INITIAL_PRODUCTS.find(p => p.id === calcProductId)?.commissionPercent! / 100)))}
+                     </span>
+                   </div>
+                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 9: CREATOR WHITELIST & MY COURSES & AI TOOLS & CRM & LEDGER */}
+        {activeSection === "creator" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-gradient-to-br from-[#141d30] to-[#0f172a] border border-fuchsia-500/30 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-fuchsia-500/10 blur-[80px]"></div>
+               <Briefcase className="w-12 h-12 text-fuchsia-400 mx-auto mb-6 relative z-10"/>
+               <h2 className="text-3xl font-black text-white mb-4 relative z-10">Creator Whitelist Portal</h2>
+               <p className="text-gray-400 max-w-2xl mx-auto mb-8 relative z-10">
+                 Want to list your own high-converting digital product on the EarnMega Marketplace? Read the strict QA requirements and submit your application to our board.
+               </p>
+               <div className="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
+                 <Link className="px-8 py-4 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-black transition-all shadow-[0_0_20px_rgba(192,38,211,0.3)]" href="/whitelist">
+                   Open Official Creator Whitelist Site (/whitelist) ↗
+                 </Link>
+                 <a href={`mailto:${SUPPORT_EMAIL_PRIMARY}?subject=Creator%20Whitelist%20Submission`} className="px-8 py-4 rounded-xl bg-[#141d30] hover:bg-[#1b263f] border border-white/10 text-white font-bold transition-all">
+                   Submit Application via Email
+                 </a>
+               </div>
+            </div>
+          </div>
+        )}
+
+        {activeSection === "rules" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="bg-gradient-to-br from-[#141d30] to-[#0f172a] border border-emerald-500/30 rounded-3xl p-8 md:p-12 text-center relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[80px]"></div>
+               <ShieldCheck className="w-12 h-12 text-emerald-400 mx-auto mb-6 relative z-10"/>
+               <h2 className="text-3xl font-black text-white mb-4 relative z-10">Official Rules & Regulations</h2>
+               <p className="text-gray-400 max-w-2xl mx-auto mb-8 relative z-10">
+                 Review the complete governance, payout policies, unique link attribution rules, and anti-spam code.
+               </p>
+               <Link className="px-8 py-4 rounded-xl inline-block bg-white hover:bg-gray-200 text-black font-black transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] relative z-10" href="/rules">
+                 Read Full Official Rules & Regulations Site (/rules) ↗
+               </Link>
+            </div>
+          </div>
+        )}
+
+        {activeSection === "my_courses" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-2xl font-black text-white mb-2">My Unlocked Courses & Drive Vault</h2>
+            {unlockedProductIds.length === 0 ? (
+              <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-12 text-center">
+                <Folder className="w-12 h-12 text-gray-600 mx-auto mb-4"/>
+                <p className="text-gray-400">You haven't unlocked any courses yet.</p>
+                <button onClick={() => setActiveSection("marketplace")} className="mt-4 px-6 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/30">Browse Marketplace</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {INITIAL_PRODUCTS.filter(p => unlockedProductIds.includes(p.id)).map(p => (
+                  <div key={p.id} className="bg-[#0f172a] border border-emerald-500/30 rounded-3xl p-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 blur-[40px]"></div>
+                    <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4 border border-emerald-500/30">
+                      <Folder className="w-5 h-5 text-emerald-400"/>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{p.title}</h3>
+                    <p className="text-sm text-gray-400 mb-6">Full Google Drive Access Granted.</p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <a href={p.deliveryUrl} target="_blank" rel="noopener noreferrer" className="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs transition-all text-center flex items-center justify-center gap-2">
+                        <Folder className="w-4 h-4"/> Open Drive Folder ↗
+                      </a>
+                      <button onClick={() => { setActiveSection("exam"); setExamProductId(p.id); }} className="flex-1 py-3 rounded-xl bg-[#141d30] hover:bg-[#1b263f] border border-white/10 text-white font-bold text-xs transition-all text-center flex items-center justify-center gap-2">
+                        <Award className="w-4 h-4"/> Take Certification Exam
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeSection === "ai_tools" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-2xl font-black text-white mb-2 flex items-center gap-3"><Sparkles className="w-6 h-6 text-purple-400"/> AI Tools & Generators</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-6">
+                <h3 className="text-lg font-bold text-white mb-2">WhatsApp Auto-Closer Link</h3>
+                <p className="text-xs text-gray-400 mb-4">Generate a wa.me link with a pre-filled message for your leads.</p>
+                <button onClick={() => alert('Feature coming soon in next update!')} className="w-full py-3 rounded-xl bg-[#141d30] border border-white/10 text-white font-bold text-xs">Open Generator</button>
+              </div>
+              <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-6">
+                <h3 className="text-lg font-bold text-white mb-2">Bio-Link Storefront</h3>
+                <p className="text-xs text-gray-400 mb-4">Your single URL showcasing all 6 products with your affiliate code.</p>
+                <div className="flex bg-[#141d30] border border-white/10 rounded-xl overflow-hidden mb-2">
+                   <input type="text" readOnly value={`https://earnmega.com/store?ref=${userAffiliateCode}`} className="flex-1 bg-transparent px-3 py-2 text-xs text-gray-300 font-mono outline-none" />
+                   <button onClick={() => handleCopy(`https://earnmega.com/store?ref=${userAffiliateCode}`, 'store')} className="px-3 bg-white/5 hover:bg-white/10 border-l border-white/10"><Copy className="w-3.5 h-3.5"/></button>
+                </div>
+              </div>
+              <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-6">
+                <h3 className="text-lg font-bold text-white mb-2">Social Proof Flyer</h3>
+                <p className="text-xs text-gray-400 mb-4">Generate an official EarnMega Earnings Flyer for your WhatsApp Status.</p>
+                <button onClick={() => alert('Feature coming soon in next update!')} className="w-full py-3 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30 font-bold text-xs">Create Flyer</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeSection === "leads_crm" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                <Users className="w-5 h-5 text-orange-400"/>
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-white">Abandoned Checkout Leads CRM</h2>
+                <p className="text-sm text-gray-400">Follow up with buyers who filled Step 1 but didn't complete payment.</p>
+              </div>
+            </div>
+
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl overflow-hidden">
+              {abandonedLeads.length === 0 ? (
+                <div className="p-12 text-center text-gray-500">No abandoned leads yet.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-[#141d30] border-b border-white/10 text-gray-400 text-xs uppercase font-bold">
+                      <tr>
+                        <th className="px-6 py-4">Date</th>
+                        <th className="px-6 py-4">Lead Info</th>
+                        <th className="px-6 py-4">Product Target</th>
+                        <th className="px-6 py-4">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {abandonedLeads.map(lead => (
+                        <tr key={lead.id} className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 text-xs font-mono text-gray-400 whitespace-nowrap">{lead.createdAt}</td>
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-white">{lead.fullName}</div>
+                            <div className="text-xs text-gray-400">{lead.email}</div>
+                            <div className="text-xs text-gray-400">{lead.phone}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-emerald-400 font-bold max-w-[200px] truncate">{lead.productTitle}</div>
+                            <div className="text-xs text-gray-500">{formatAmount(lead.amountGHS)}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <a
+                              href={`https://wa.me/${lead.phone.replace('+', '')}?text=${encodeURIComponent(`Hello ${lead.fullName}, I noticed you started the checkout process for ${lead.productTitle} but didn't complete it. Do you need any help with the payment?`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/30 rounded-lg text-xs font-bold flex items-center justify-center gap-2 whitespace-nowrap hover:bg-[#25D366]/30"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5"/> Recover Lead
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeSection === "ledger" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center">
+                <BarChart3 className="w-5 h-5 text-indigo-400"/>
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-white">Financial Sales Ledger</h2>
+                <p className="text-sm text-gray-400">Complete record of your verified commissions.</p>
+              </div>
+            </div>
+
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl overflow-hidden">
+              {transactions.length === 0 ? (
+                <div className="p-12 text-center text-gray-500">No verified sales yet.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-[#141d30] border-b border-white/10 text-gray-400 text-xs uppercase font-bold">
+                      <tr>
+                        <th className="px-6 py-4">Date / UID</th>
+                        <th className="px-6 py-4">Buyer</th>
+                        <th className="px-6 py-4">Product</th>
+                        <th className="px-6 py-4 text-right">Commission (50%)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {transactions.map(tx => (
+                        <tr key={tx.id} className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-xs text-gray-400 mb-1">{tx.date}</div>
+                            <div className="text-xs font-mono bg-white/5 px-2 py-0.5 rounded inline-block text-gray-300">{tx.orderUid}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-white">{tx.buyerName}</div>
+                            <div className="text-xs text-gray-400">{tx.buyerEmail}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-300 max-w-[200px] truncate">{tx.productTitle}</div>
+                            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 mt-1 inline-block">Paystack Verified</span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="text-lg font-black text-emerald-400">{formatAmount(tx.commissionGHS)}</div>
+                            <div className="text-[10px] text-gray-500 line-through">{formatAmount(tx.amountGHS)} Gross</div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 11: PROFILE & SETTINGS */}
+        {activeSection === "profile" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-black text-white mb-2">Account Details</h2>
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-6 text-center mb-6">
+              <p className="text-gray-400 mb-4">Please use the Settings Modal to edit your profile.</p>
+              <button onClick={() => setActiveSettingsModal('profile')} className="px-6 py-3 rounded-xl bg-[#141d30] border border-white/10 text-white font-bold text-sm">Open Settings Modal</button>
+            </div>
+
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-5 shadow-xl relative overflow-hidden">
+               <div className="flex items-center justify-between mb-4 relative z-10">
+                 <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                   AFFILIATE ANNUAL LICENSE & RENEWAL TIMER
+                 </span>
+                 {timeRemaining.expired ? (
+                    <span className="text-[10px] font-black bg-rose-500/20 text-rose-400 px-3 py-1 rounded-full border border-rose-500/30">
+                      🔴 LICENSE EXPIRED
+                    </span>
+                 ) : timeRemaining.days <= 14 ? (
+                    <span className="text-[10px] font-black bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full border border-orange-500/30 animate-pulse">
+                      🟠 EXPIRING SOON
+                    </span>
+                 ) : (
+                    <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30">
+                      🟢 ACTIVE
+                    </span>
+                 )}
+               </div>
+
+               <div className="grid grid-cols-4 gap-2 mb-4 relative z-10">
+                 {[
+                   { label: 'DAYS', val: timeRemaining.days },
+                   { label: 'HOURS', val: timeRemaining.hours.toString().padStart(2, '0') },
+                   { label: 'MINS', val: timeRemaining.minutes.toString().padStart(2, '0') },
+                   { label: 'SECS', val: timeRemaining.seconds.toString().padStart(2, '0') }
+                 ].map((t, idx) => (
+                   <div key={idx} className="bg-[#141d30] border border-emerald-500/20 rounded-xl p-3 flex flex-col items-center justify-center">
+                     <span className="text-2xl md:text-3xl font-black text-emerald-400 font-mono tracking-wider">{t.val}</span>
+                     <span className="text-[9px] font-bold text-gray-500 uppercase mt-1">{t.label}</span>
+                   </div>
+                 ))}
+               </div>
+
+               <div className="flex flex-col md:flex-row gap-3 relative z-10">
+                 <button
+                   onClick={() => setIsRenewalModalOpen(true)}
+                   className="flex-1 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                 >
+                   Renew / Extend +1 Year (GH₵ 45.00)
+                 </button>
+               </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 12: NOTIFICATIONS */}
+        {activeSection === "notifications" && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-black text-white mb-2">Notifications Center</h2>
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-6 text-center">
+              <p className="text-gray-400 mb-4">Please use the Notifications Drawer from the top right.</p>
+              <button onClick={() => setIsNotificationsOpen(true)} className="px-6 py-3 rounded-xl bg-[#141d30] border border-white/10 text-white font-bold text-sm">Open Notifications</button>
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 13: SUPPORT */}
+        {activeSection === "support" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-2xl font-black text-white mb-2">Help & Support Desk</h2>
+            <div className="bg-[#0f172a] border border-white/10 rounded-3xl p-6 md:p-8">
+               <p className="text-gray-400 mb-8 max-w-xl">Need assistance? Our support agents are available 24/7 to help you with your affiliate account, payouts, or technical issues.</p>
+               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                 <a href={`mailto:${SUPPORT_EMAIL_PRIMARY}`} className="p-8 bg-[#141d30] rounded-2xl flex flex-col items-center justify-center text-center hover:bg-[#1c2842] border border-white/5 hover:border-indigo-500/30 transition-all group">
+                   <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                     <Mail className="w-8 h-8 text-indigo-400"/>
+                   </div>
+                   <span className="font-bold text-white mb-1">Email Support</span>
+                   <span className="text-xs text-gray-400">{SUPPORT_EMAIL_PRIMARY}</span>
+                 </a>
+                 <a href={`https://wa.me/${SUPPORT_WHATSAPP_INTL}`} target="_blank" rel="noopener noreferrer" className="p-8 bg-[#141d30] rounded-2xl flex flex-col items-center justify-center text-center hover:bg-[#1c2842] border border-white/5 hover:border-[#25D366]/30 transition-all group">
+                   <div className="w-16 h-16 rounded-full bg-[#25D366]/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                     <MessageSquare className="w-8 h-8 text-[#25D366]"/>
+                   </div>
+                   <span className="font-bold text-white mb-1">WhatsApp Chat</span>
+                   <span className="text-xs text-gray-400">{SUPPORT_WHATSAPP_DISPLAY}</span>
+                 </a>
+               </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* ==================================================================== */}
+      {/* MODALS */}
+      {/* ==================================================================== */}
+
+      {/* Checkout Step 1 Modal */}
+      {checkoutStep === 1 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0f172a] w-full max-w-md rounded-3xl overflow-hidden border border-white/10 animate-in zoom-in-95">
+            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#141d30]">
+               <h3 className="text-lg font-bold text-white flex items-center gap-2"><CreditCard className="w-5 h-5 text-emerald-400"/> Secure Checkout</h3>
+               <button onClick={() => { setCheckoutStep(null); setActiveSalesPageProduct(null); }} className="p-2 rounded-lg bg-white/5 hover:bg-white/10">
+                 <X className="w-5 h-5 text-gray-400"/>
+               </button>
+            </div>
+            <div className="p-6">
+               <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-xl mb-6">
+                 <h4 className="text-amber-400 font-bold text-xs mb-1">⚠️ Important Instructions</h4>
+                 <p className="text-xs text-amber-200/80">1. Please ensure to use your correct details for checkout.<br/>2. Make sure your EMAIL ADDRESS is CORRECT, ACTIVE and ACCESSIBLE, otherwise you will NOT receive access.</p>
+               </div>
+
+               <form onSubmit={handleCheckoutStep1Next} className="space-y-4">
+                 <div>
+                   <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Full Name</label>
+                   <input type="text" required value={buyerFullName} onChange={(e) => setBuyerFullName(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50" />
+                 </div>
+                 <div>
+                   <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Email Address</label>
+                   <input type="email" required value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50" />
+                 </div>
+                 <div className="grid grid-cols-3 gap-3">
+                   <div className="col-span-1">
+                     <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Code</label>
+                     <select value={buyerDialCode} onChange={(e) => setBuyerDialCode(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-2 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50">
+                       {COUNTRY_DIAL_CODES.map(c => <option key={c.country} value={c.code}>{c.code} ({c.country.slice(0,2)})</option>)}
+                     </select>
+                   </div>
+                   <div className="col-span-2">
+                     <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Phone Number</label>
+                     <input type="text" required value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50" />
+                   </div>
+                 </div>
+                 <div>
+                   <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">Country</label>
+                   <select value={buyerCountry} onChange={(e) => setBuyerCountry(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500/50">
+                     {["Ghana", "Nigeria", "Kenya", "South Africa", "United States", "United Kingdom", "India", "UAE", "Other"].map(c => <option key={c} value={c}>{c}</option>)}
+                   </select>
+                 </div>
+
+                 <button type="submit" className="w-full py-4 mt-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black transition-all flex items-center justify-center gap-2">
+                   Continue to Payment <ArrowRight className="w-4 h-4"/>
+                 </button>
+               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Step 2 Modal */}
+      {checkoutStep === 2 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0f172a] w-full max-w-md rounded-3xl overflow-hidden border border-white/10 animate-in zoom-in-95">
+            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#141d30]">
+               <h3 className="text-lg font-bold text-white">Payment Selection</h3>
+               <button onClick={() => setCheckoutStep(1)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10">
+                 <X className="w-5 h-5 text-gray-400"/>
+               </button>
+            </div>
+            <div className="p-6 space-y-6">
+               <div className="flex justify-between items-center bg-[#141d30] p-4 rounded-xl border border-white/5">
+                 <span className="text-sm text-gray-400">Preview Currency</span>
+                 <select value={selectedCurrency} onChange={(e) => setSelectedCurrency(e.target.value)} className="bg-[#0b111e] border border-white/10 px-3 py-1.5 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500/50">
+                   {["GHS", "NGN", "KES", "ZAR", "USD", "GBP", "EUR", "INR", "AED"].map(c => <option key={c} value={c}>{c}</option>)}
+                 </select>
+               </div>
+
+               <div className="bg-[#141d30] p-5 rounded-2xl border border-white/5">
+                 <h4 className="text-sm font-bold text-white mb-1">
+                   {isDirectEnrollmentCheckout ? "EarnMega Pillar 2 Direct Access" : activeSalesPageProduct?.title}
+                 </h4>
+                 <p className="text-xs text-gray-400 mb-4 border-b border-white/10 pb-4">
+                   {isDirectEnrollmentCheckout ? "One-time Direct Enrollment Fee." : "Instant Lifetime Access to Course + Affiliate Platform."}
+                 </p>
+
+                 {!isDirectEnrollmentCheckout && (
+                   <label className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl mb-4 cursor-pointer">
+                     <input type="checkbox" checked={includeOrderBump} onChange={(e) => setIncludeOrderBump(e.target.checked)} className="mt-1" />
+                     <div>
+                       <span className="text-xs font-bold text-amber-400 block">Yes, Add Viral Hook & Closing Script Pack (+GH₵ 80)</span>
+                       <span className="text-[10px] text-amber-200/70">Highly Recommended 1-Click Order Bump.</span>
+                     </div>
+                   </label>
+                 )}
+
+                 <div className="flex justify-between items-end">
+                   <span className="text-sm text-gray-400 uppercase font-bold">Total Payable</span>
+                   <div className="text-right">
+                     <span className="text-2xl font-black text-white block">
+                       {selectedCurrency !== "GHS" && "≈ "}
+                       {selectedCurrency === "GHS"
+                         ? formatAmount((isDirectEnrollmentCheckout ? DIRECT_ENROLLMENT_GHS : (activeSalesPageProduct?.priceGHS || 0)) + (includeOrderBump ? 80 : 0))
+                         : `${selectedCurrency} ` + (((isDirectEnrollmentCheckout ? DIRECT_ENROLLMENT_GHS : (activeSalesPageProduct?.priceGHS || 0)) + (includeOrderBump ? 80 : 0)) * (selectedCurrency === 'NGN' ? 100 : selectedCurrency === 'KES' ? 10 : selectedCurrency === 'ZAR' ? 1.5 : selectedCurrency === 'USD' ? 0.08 : 0.08)).toFixed(2)
+                       }
+                     </span>
+                     {selectedCurrency !== "GHS" && (
+                       <span className="text-xs text-gray-500">Settled in GH₵</span>
+                     )}
+                   </div>
+                 </div>
+               </div>
+
+               <button onClick={launchPaystackFromStep2} className="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black transition-all text-lg shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+                 Pay Now via Paystack (GH₵ {(isDirectEnrollmentCheckout ? DIRECT_ENROLLMENT_GHS : (activeSalesPageProduct?.priceGHS || 0)) + (includeOrderBump ? 80 : 0)})
+               </button>
+
+               <button onClick={() => completeVerifiedPurchaseRecord(`EM_TEST_${Date.now()}`)} className="w-full py-3 rounded-xl bg-[#141d30] border border-white/10 text-white font-bold text-xs hover:bg-[#1b263f]">
+                 Instant Verify / Test Purchase
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Promote Studio Modal */}
+      {promoteModalProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0f172a] w-full max-w-2xl rounded-3xl overflow-hidden border border-indigo-500/30 animate-in zoom-in-95 shadow-[0_0_50px_rgba(79,70,229,0.15)] flex flex-col max-h-[90vh]">
+            <div className="p-5 border-b border-white/10 flex justify-between items-center bg-gradient-to-r from-indigo-900/40 to-transparent">
+               <div>
+                 <h3 className="text-xl font-black text-white flex items-center gap-2"><Rocket className="w-5 h-5 text-indigo-400"/> Promote Studio</h3>
+                 <span className="text-xs text-indigo-300 font-medium">{promoteModalProduct.title}</span>
+               </div>
+               <button onClick={() => setPromoteModalProduct(null)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10">
+                 <X className="w-5 h-5 text-gray-400"/>
+               </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-8">
+               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                 <div className="bg-[#141d30] rounded-xl p-3 border border-white/5 text-center">
+                   <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Est. EPC</span>
+                   <span className="text-sm font-black text-white">{promoteModalProduct.epc}</span>
+                 </div>
+                 <div className="bg-[#141d30] rounded-xl p-3 border border-white/5 text-center">
+                   <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Conv. Rate</span>
+                   <span className="text-sm font-black text-white">{promoteModalProduct.conversionRate}</span>
+                 </div>
+                 <div className="bg-[#141d30] rounded-xl p-3 border border-white/5 text-center">
+                   <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Refund Rate</span>
+                   <span className="text-sm font-black text-white">1.2%</span>
+                 </div>
+                 <div className="bg-emerald-500/10 rounded-xl p-3 border border-emerald-500/20 text-center">
+                   <span className="text-[10px] text-emerald-500 uppercase font-bold block mb-1">Avg Payout</span>
+                   <span className="text-sm font-black text-emerald-400">{formatAmount(promoteModalProduct.priceGHS * (promoteModalProduct.commissionPercent / 100))}</span>
+                 </div>
+               </div>
+
+               <div className="space-y-4">
+                 <div>
+                   <label className="text-xs font-bold text-gray-400 uppercase block mb-2">1. Your Unique Tracking Link</label>
+                   <div className="flex bg-[#141d30] border border-white/10 rounded-xl overflow-hidden shadow-inner">
+                     <input
+                       type="text"
+                       readOnly
+                       value={getUniqueProductAffiliateLink(promoteModalProduct, linkTags[`tag-${promoteModalProduct.id}`] || undefined)}
+                       className="flex-1 bg-transparent px-4 py-3.5 text-sm text-emerald-400 font-mono outline-none selection:bg-emerald-500/30"
+                     />
+                     <button
+                       onClick={() => handleCopy(getUniqueProductAffiliateLink(promoteModalProduct, linkTags[`tag-${promoteModalProduct.id}`] || undefined), `modal-${promoteModalProduct.id}`)}
+                       className={`px-6 flex items-center justify-center transition-colors border-l border-white/10 font-bold text-sm ${copiedKey === `modal-${promoteModalProduct.id}` ? 'bg-indigo-500 text-white' : 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400'}`}
+                     >
+                       {copiedKey === `modal-${promoteModalProduct.id}` ? 'Copied ✓' : 'Copy'}
+                     </button>
+                   </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                   <div>
+                     <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">Traffic Tag (Sub-ID)</label>
+                     <input
+                       type="text"
+                       placeholder="e.g. tiktok_bio"
+                       value={linkTags[`tag-${promoteModalProduct.id}`] || ''}
+                       onChange={(e) => setLinkTags(prev => ({...prev, [`tag-${promoteModalProduct.id}`]: e.target.value}))}
+                       className="w-full bg-[#141d30] border border-white/10 px-4 py-3 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500/50"
+                     />
+                   </div>
+                   <div>
+                     <label className="text-[10px] font-bold text-gray-400 uppercase block mb-1.5">Custom Slug (Optional)</label>
+                     <div className="flex bg-[#141d30] border border-white/10 rounded-xl overflow-hidden">
+                       <span className="px-3 py-3 bg-white/5 text-gray-500 text-xs border-r border-white/10 flex items-center">earnmega.com/</span>
+                       <input type="text" placeholder="my-slug" className="flex-1 bg-transparent px-3 py-3 text-sm text-white focus:outline-none" />
+                     </div>
+                   </div>
+                 </div>
+               </div>
+
+               <div className="flex flex-col sm:flex-row gap-6 bg-[#0b111e] p-6 rounded-2xl border border-white/5">
+                 <div className="shrink-0 mx-auto sm:mx-0">
+                   <div className="w-32 h-32 bg-white rounded-xl p-2 mx-auto">
+                     <img
+                       src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(getUniqueProductAffiliateLink(promoteModalProduct, linkTags[`tag-${promoteModalProduct.id}`] || undefined))}`}
+                       alt="QR Code"
+                       className="w-full h-full object-contain"
+                     />
+                   </div>
+                   <button onClick={() => handleDownloadQrCode(getUniqueProductAffiliateLink(promoteModalProduct, linkTags[`tag-${promoteModalProduct.id}`] || undefined), promoteModalProduct.id)} className="w-full mt-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 border border-white/10">
+                     <Download className="w-3.5 h-3.5"/> Download QR
+                   </button>
+                 </div>
+
+                 <div className="flex-1 flex flex-col justify-center space-y-3">
+                   <h4 className="text-sm font-bold text-white">2. 1-Tap Quick Share</h4>
+                   <a
+                     href={`https://wa.me/?text=${encodeURIComponent(`Check out ${promoteModalProduct.title}!
+
+Get it here: ${getUniqueProductAffiliateLink(promoteModalProduct, linkTags[`tag-${promoteModalProduct.id}`] || undefined)}`)}`}
+                     target="_blank" rel="noopener noreferrer"
+                     className="w-full py-3 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#25D366] font-bold text-sm transition-all flex items-center justify-center gap-2"
+                   >
+                     <MessageSquare className="w-4 h-4"/> Share to WhatsApp
+                   </a>
+                   <a
+                     href={`https://t.me/share/url?url=${encodeURIComponent(getUniqueProductAffiliateLink(promoteModalProduct, linkTags[`tag-${promoteModalProduct.id}`] || undefined))}&text=${encodeURIComponent(`Check out ${promoteModalProduct.title}!`)}`}
+                     target="_blank" rel="noopener noreferrer"
+                     className="w-full py-3 rounded-xl bg-[#229ED9]/10 hover:bg-[#229ED9]/20 border border-[#229ED9]/30 text-[#229ED9] font-bold text-sm transition-all flex items-center justify-center gap-2"
+                   >
+                     <Share2 className="w-4 h-4"/> Share to Telegram
+                   </a>
+                 </div>
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal (Profile, KYC, Security, 2FA, Support) */}
+      {activeSettingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#0f172a] w-full max-w-md rounded-3xl overflow-hidden border border-white/10 animate-in zoom-in-95">
+            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#141d30]">
+               <h3 className="text-lg font-bold text-white capitalize">{activeSettingsModal.replace('_', ' ')} Settings</h3>
+               <button onClick={() => setActiveSettingsModal(null)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10">
+                 <X className="w-5 h-5 text-gray-400"/>
+               </button>
+            </div>
+
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              <form onSubmit={handleSavePillar2Profile} className="space-y-5">
+                {(activeSettingsModal === 'profile' || activeSettingsModal === 'pillar2_onboarding') && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-gray-400 block mb-1.5">First Name</label>
+                        <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-400 block mb-1.5">Last Name</label>
+                        <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-xs font-bold text-gray-400 block">Pillar 2 Email</label>
+                        <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">🔒 Locked (Verified Paid Email)</span>
+                      </div>
+                      <input type="email" value={currentProfile?.email || pillar2Email} readOnly disabled className="w-full bg-slate-900/90 text-slate-400 border border-amber-500/30 cursor-not-allowed select-none opacity-85 px-4 py-2.5 rounded-xl text-sm focus:outline-none" />
+                      <p className="text-[10px] text-gray-500 mt-1">🔒 Your email is permanently bound to your paid EarnMega Affiliate license and cannot be changed.</p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 block mb-1.5">Phone Number</label>
+                      <input type="text" value={pillar2Phone} onChange={(e) => setPillar2Phone(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 block mb-1.5">Country</label>
+                      <input type="text" value={pillar2Country} onChange={(e) => setPillar2Country(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none" />
+                    </div>
+                  </>
+                )}
+
+                {activeSettingsModal === 'kyc' && (
+                  <>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 block mb-1.5">City</label>
+                      <input type="text" value={pillar2City} onChange={(e) => setPillar2City(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 block mb-1.5">Address / Street</label>
+                      <input type="text" value={pillar2Address} onChange={(e) => setPillar2Address(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 block mb-1.5">KYC ID Type</label>
+                      <select value={kycIdType} onChange={(e) => setKycIdType(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none">
+                        <option>Ghana Card</option>
+                        <option>National ID</option>
+                        <option>Passport</option>
+                        <option>Driver's License</option>
+                        <option>Voter's ID</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 block mb-1.5">KYC ID Number</label>
+                      <input type="text" value={kycIdNumber} onChange={(e) => setKycIdNumber(e.target.value)} className="w-full bg-[#141d30] border border-white/10 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none" />
+                    </div>
+                  </>
+                )}
+
+                {activeSettingsModal === 'security' && (
+                  <>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 block mb-1.5">Current Password</label>
+                      <input type="password" placeholder="••••••••" className="w-full bg-[#141d30] border border-white/10 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 block mb-1.5">New Password</label>
+                      <input type="password" placeholder="••••••••" className="w-full bg-[#141d30] border border-white/10 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-400 block mb-1.5">Confirm New Password</label>
+                      <input type="password" placeholder="••••••••" className="w-full bg-[#141d30] border border-white/10 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none" />
+                    </div>
+                  </>
+                )}
+
+                {activeSettingsModal === '2fa' && (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-300">Enable Two-Factor Authentication (2FA) to secure your affiliate payouts and account access.</p>
+                    <label className="flex items-center justify-between p-4 bg-[#141d30] rounded-xl border border-white/10 cursor-pointer">
+                      <span className="text-sm font-bold text-white">Enable Email OTP for Payouts</span>
+                      <input type="checkbox" checked={twoFactorEnabled} onChange={(e) => setTwoFactorEnabled(e.target.checked)} className="w-5 h-5 accent-emerald-500" />
+                    </label>
+                    {twoFactorEnabled && (
+                       <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl">
+                         <span className="text-emerald-400 text-xs font-bold">2FA is currently active for withdrawals.</span>
+                       </div>
+                    )}
+                  </div>
+                )}
+
+                {activeSettingsModal !== 'support' && (
+                  <button type="submit" onClick={() => setActiveSettingsModal(null)} className="w-full py-4 mt-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black transition-all flex items-center justify-center gap-2">
+                    Save Changes
+                  </button>
+                )}
+              </form>
+
+              {activeSettingsModal === 'support' && (
+                <div className="space-y-4 text-center">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4">
+                    <LifeBuoy className="w-8 h-8 text-emerald-400"/>
+                  </div>
+                  <h4 className="text-lg font-bold text-white mb-2">How can we help?</h4>
+                  <p className="text-sm text-gray-400 mb-6">Our 24/7 support team is ready to assist you.</p>
+                  <a href={`mailto:${SUPPORT_EMAIL_PRIMARY}`} className="w-full py-3 rounded-xl bg-[#141d30] hover:bg-[#1b263f] border border-white/10 text-white font-bold transition-all flex items-center justify-center gap-2 mb-3">
+                    <Mail className="w-4 h-4"/> Email: {SUPPORT_EMAIL_PRIMARY}
+                  </a>
+                  <a href={`https://wa.me/${SUPPORT_WHATSAPP_INTL}`} target="_blank" rel="noopener noreferrer" className="w-full py-3 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366]/30 border border-[#25D366]/30 text-[#25D366] font-bold transition-all flex items-center justify-center gap-2">
+                    <MessageSquare className="w-4 h-4"/> Chat on WhatsApp ({SUPPORT_WHATSAPP_DISPLAY})
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notifications Drawer Slide-over */}
+      {isNotificationsOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm bg-[#0f172a] h-full border-l border-white/10 animate-in slide-in-from-right shadow-2xl flex flex-col">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#141d30]">
+               <h3 className="text-lg font-black text-white flex items-center gap-2"><Bell className="w-5 h-5 text-emerald-400"/> Notifications</h3>
+               <button onClick={() => setIsNotificationsOpen(false)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10">
+                 <X className="w-5 h-5 text-gray-400"/>
+               </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {notificationsList.length === 0 ? (
+                <div className="text-center text-gray-500 py-12">No notifications yet.</div>
+              ) : (
+                notificationsList.map(notif => (
+                  <div key={notif.id} className={`p-4 rounded-xl border transition-all ${!notif.read ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-[#141d30] border-white/5'}`}>
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-bold text-sm text-white">{notif.title}</span>
+                      <span className="text-[10px] text-gray-500">{notif.timeAgo}</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mb-2">{notif.subtitle}</p>
+                    {notif.amountGHS && (
+                      <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                        + {formatAmount(notif.amountGHS)}
+                      </span>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-4 border-t border-white/10 bg-[#0b111e] grid grid-cols-2 gap-3">
+               <button
+                 onClick={() => setNotificationsList(prev => prev.map(n => ({...n, read: true})))}
+                 className="py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-white border border-white/10"
+               >
+                 Mark All Read
+               </button>
+               <button
+                 onClick={() => setNotificationsList([])}
+                 className="py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-xs font-bold text-rose-400 border border-rose-500/20"
+               >
+                 Clear All
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating AI Help Bot Window */}
+      {isAiBotOpen && (
+        <div className="fixed bottom-24 left-4 z-50 w-[340px] max-w-[calc(100vw-32px)] bg-[#0f172a] rounded-3xl overflow-hidden border border-emerald-500/30 shadow-[0_0_40px_rgba(16,185,129,0.15)] animate-in slide-in-from-bottom-8">
+           <div className="p-4 bg-gradient-to-r from-[#141d30] to-emerald-950/40 border-b border-white/10 flex justify-between items-center">
+             <div className="flex items-center gap-2">
+               <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/40 text-lg">🤖</div>
+               <div>
+                 <span className="text-sm font-bold text-white block">EarnMega AI Brain</span>
+                 <span className="text-[10px] text-emerald-400 flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div> Online</span>
+               </div>
+             </div>
+             <button onClick={() => setIsAiBotOpen(false)} className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10">
+                 <X className="w-4 h-4 text-gray-400"/>
+             </button>
+           </div>
+
+           <div className="h-64 overflow-y-auto p-4 space-y-4 bg-[#0b111e]">
+             {aiMessages.map((msg, i) => (
+               <div key={i} className={`flex ${msg.sender === 'bot' ? 'justify-start' : 'justify-end'}`}>
+                 <div className={`max-w-[85%] rounded-2xl p-3 text-sm ${msg.sender === 'bot' ? 'bg-[#141d30] border border-white/10 text-gray-200 rounded-tl-sm' : 'bg-emerald-600 text-white rounded-tr-sm'}`}>
+                   {msg.text}
+                 </div>
+               </div>
+             ))}
+           </div>
+
+           <div className="p-3 border-t border-white/10 bg-[#141d30]">
+             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 mb-1">
+               {["Analyze my sales", "How do Friday payouts work?", "Write WhatsApp status hook", "1-Click Order Bump strategy"].map(chip => (
+                 <button key={chip} onClick={() => handleAiBotSend(chip)} className="shrink-0 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-emerald-300 hover:bg-white/10 transition-colors whitespace-nowrap">
+                   {chip}
+                 </button>
+               ))}
+             </div>
+             <form onSubmit={(e) => { e.preventDefault(); handleAiBotSend(); }} className="flex gap-2 relative">
+               <input
+                 type="text"
+                 value={aiInput}
+                 onChange={(e) => setAiInput(e.target.value)}
+                 placeholder="Ask EarnMega AI..."
+                 className="flex-1 bg-[#0b111e] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500/50"
+               />
+               <button type="submit" disabled={!ai
