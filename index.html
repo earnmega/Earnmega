@@ -1,0 +1,1420 @@
+"use client";
+
+import Link from 'next/link';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { supabase } from '../../utils/supabase';
+import { ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  DollarSign,
+  Copy,
+  Check,
+  ExternalLink,
+  Award,
+  BookOpen,
+  Send,
+  Zap,
+  ChevronRight,
+  Lock,
+  Unlock,
+  ShoppingBag,
+  BarChart3,
+  Users,
+  Calculator,
+  Share2,
+  HelpCircle,
+  ArrowUpRight,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Menu,
+  X,
+  Bell,
+  User,
+  Search,
+  Star,
+  QrCode,
+  Code,
+  LogOut,
+  Settings,
+  Key,
+  Smartphone,
+  FileText,
+  Trophy,
+  Video,
+  MessageSquare,
+  Globe,
+  Phone,
+  Mail,
+  Download,
+  RefreshCw,
+  Eye,
+  Layers,
+  Briefcase
+, CreditCard, ArrowRight, Folder, RefreshCcw, CalendarDays, Upload, LifeBuoy, Rocket } from 'lucide-react';
+
+// ============================================================================
+// PLATFORM CONFIGURATION & CONSTANTS (PAYWALLS DISABLED FOR TESTING)
+// ============================================================================
+const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "";
+const DIRECT_ENROLLMENT_GHS = 90.00;
+const VIRAL_CONTEST_PRIZE_GHS = 10000.00;
+
+const SUPPORT_EMAIL_PRIMARY = "earnmegadesk@gmail.com";
+const SUPPORT_EMAIL_SECONDARY = "earnmegadesk@gmail.com";
+const SUPPORT_WHATSAPP_DISPLAY = "0596096071";
+const SUPPORT_WHATSAPP_INTL = "233596096071";
+
+// ============================================================================
+// WORLDWIDE CURRENCIES (AFRICA, ASIA, EUROPE, AMERICAS — SETTLES IN GHS)
+// ============================================================================
+interface CurrencyRate {
+  code: string;
+  symbol: string;
+  rateToGHS: number;
+  region: string;
+  name: string;
+}
+
+const GLOBAL_CURRENCIES: Record<string, CurrencyRate> = {
+  GHS: { code: 'GHS', symbol: 'GH₵', rateToGHS: 1.0, region: 'Africa', name: 'Ghana Cedi (Paystack Settlement)' },
+  NGN: { code: 'NGN', symbol: '₦', rateToGHS: 0.010, region: 'Africa', name: 'Nigerian Naira' },
+  KES: { code: 'KES', symbol: 'KSh', rateToGHS: 0.124, region: 'Africa', name: 'Kenyan Shilling' },
+  ZAR: { code: 'ZAR', symbol: 'R', rateToGHS: 0.88, region: 'Africa', name: 'South African Rand' },
+  XOF: { code: 'XOF', symbol: 'CFA', rateToGHS: 0.026, region: 'Africa', name: 'West African CFA Franc' },
+  XAF: { code: 'XAF', symbol: 'FCFA', rateToGHS: 0.026, region: 'Africa', name: 'Central African CFA Franc' },
+  UGX: { code: 'UGX', symbol: 'USh', rateToGHS: 0.0043, region: 'Africa', name: 'Ugandan Shilling' },
+  TZS: { code: 'TZS', symbol: 'TSh', rateToGHS: 0.0061, region: 'Africa', name: 'Tanzanian Shilling' },
+  RWF: { code: 'RWF', symbol: 'FRw', rateToGHS: 0.012, region: 'Africa', name: 'Rwandan Franc' },
+  ZMW: { code: 'ZMW', symbol: 'ZK', rateToGHS: 0.60, region: 'Africa', name: 'Zambian Kwacha' },
+  EGP: { code: 'EGP', symbol: 'E£', rateToGHS: 0.33, region: 'Africa', name: 'Egyptian Pound' },
+  USD: { code: 'USD', symbol: '$', rateToGHS: 16.00, region: 'Americas', name: 'US Dollar' },
+  CAD: { code: 'CAD', symbol: 'C$', rateToGHS: 11.60, region: 'Americas', name: 'Canadian Dollar' },
+  GBP: { code: 'GBP', symbol: '£', rateToGHS: 20.20, region: 'Europe', name: 'British Pound' },
+  EUR: { code: 'EUR', symbol: '€', rateToGHS: 17.30, region: 'Europe', name: 'Euro' },
+  INR: { code: 'INR', symbol: '₹', rateToGHS: 0.19, region: 'Asia', name: 'Indian Rupee' },
+  AED: { code: 'AED', symbol: 'AED', rateToGHS: 4.35, region: 'Asia', name: 'UAE Dirham' },
+  CNY: { code: 'CNY', symbol: '¥', rateToGHS: 2.22, region: 'Asia', name: 'Chinese Yuan' },
+  JPY: { code: 'JPY', symbol: '¥', rateToGHS: 0.105, region: 'Asia', name: 'Japanese Yen' },
+  SGD: { code: 'SGD', symbol: 'S$', rateToGHS: 11.90, region: 'Asia', name: 'Singapore Dollar' },
+  MYR: { code: 'MYR', symbol: 'RM', rateToGHS: 3.60, region: 'Asia', name: 'Malaysian Ringgit' },
+  PHP: { code: 'PHP', symbol: '₱', rateToGHS: 0.28, region: 'Asia', name: 'Philippine Peso' },
+};
+
+// ============================================================================
+// GLOBAL COUNTRY DIAL CODES
+// ============================================================================
+const COUNTRY_DIAL_CODES = [
+  { country: 'Ghana', code: '+233', prefixExample: '233596096071' },
+  { country: 'Nigeria', code: '+234', prefixExample: '234803XXXXXXX' },
+  { country: 'Kenya', code: '+254', prefixExample: '2547XXXXXXXX' },
+  { country: 'South Africa', code: '+27', prefixExample: '2782XXXXXXX' },
+  { country: 'United States', code: '+1', prefixExample: '1202XXXXXXX' },
+  { country: 'United Kingdom', code: '+44', prefixExample: '4477XXXXXXXX' },
+];
+
+// ============================================================================
+// MARKETPLACE PRODUCTS (OWNED BY GEE MINGS (CREATOR))
+// ============================================================================
+export interface MarketplaceProduct {
+  epc?: string;
+  conversionRate?: string;
+  id: string;
+  shortCode: string;
+  title: string;
+  creator: string;
+  category: string;
+  badges: string[];
+  rating: number;
+  epcUSD: number;
+  avgConvRate: string;
+  refundRate: string;
+  priceUSD: number;
+  priceGHS: number;
+  commissionPercent: number;
+  externalSalesPageUrl?: string;
+  deliveryUrl: string;
+  headline: string;
+  subheadline: string;
+  bullets: string[];
+  swipeCopy: {
+    tiktok: string[];
+    whatsapp: string[];
+  };
+}
+
+const INITIAL_PRODUCTS: MarketplaceProduct[] = [
+  {
+    id: 'prod_faceless_ai',
+    shortCode: 'FACELESS-AI',
+    title: 'The AI Faceless Video Engine',
+    creator: 'Gee Mings (Creator)',
+    category: 'AI & Tech',
+    badges: ['TOP PICK', 'HIGH CONVERTING', 'SALE'],
+    rating: 4.9,
+    epcUSD: 1.45,
+    avgConvRate: '6.8%',
+    refundRate: '0.2%',
+    priceUSD: 15.00,
+    priceGHS: 240.00,
+    commissionPercent: 50,
+    externalSalesPageUrl: 'https://ai-faceless-video-engine-access-por.vercel.app',
+    deliveryUrl: 'https://drive.google.com/drive/folders/1IhgiK8DYCM8d-a82uImfds_gS4s06D8wvs7WypmFbjE',
+    headline: 'Build, Automate & Monetize High-Retention Faceless Channels Using Free AI',
+    subheadline: 'The exact workflow to generate viral scripts, realistic voiceovers, and dynamic edits in under 20 minutes per video.',
+    bullets: [
+      '100% Free AI Tool Stack — zero monthly software subscriptions required',
+      'Copy-paste viral hook & script engineering prompts for TikTok, Reels & Shorts',
+      'Step-by-step monetization blueprint for creators & affiliate marketers',
+      'Includes instant access to EarnMega Pillar 2 Affiliate Command Centre'
+    ],
+    swipeCopy: {
+      tiktok: [
+        'How creators are generating automated income with faceless AI videos in 90 seconds without filming themselves. Link in bio! #aivideo #earnmega',
+        'Stop spending 6 hours editing videos. The AI Faceless Video Engine builds high-retention clips on autopilot!'
+      ],
+      whatsapp: [
+        'Hey! I just got access to The AI Faceless Video Engine by Gee Mings. It shows you how to run profitable faceless TikTok & YouTube channels with AI. Check out the official page here: {LINK}',
+        'Want to monetize short-form video without showing your face on camera? Grab The AI Faceless Video Engine here: {LINK}'
+      ]
+    }
+  },
+  {
+    id: 'prod_mmm_system',
+    shortCode: 'MMM-ENGINE',
+    title: 'The Mega Messaging Machine (MMM)',
+    creator: 'Gee Mings (Creator)',
+    category: 'Sales',
+    badges: ['TOP PICK', 'HIGH CONVERTING'],
+    rating: 4.9,
+    epcUSD: 1.38,
+    avgConvRate: '6.4%',
+    refundRate: '0.3%',
+    priceUSD: 15.00,
+    priceGHS: 240.00,
+    commissionPercent: 50,
+    externalSalesPageUrl: 'https://ai-faceless-video-engine-access-por.vercel.app',
+    deliveryUrl: 'https://drive.google.com/drive/folders/1o7KrzMponCFxIHvCtvJtr1liyAfC-X3qKDkWrFzPWws',
+    headline: 'Turn Every WhatsApp & Social DM Into Predictable Daily Cashflow',
+    subheadline: 'High-converting WhatsApp, Instagram, and DM closing scripts engineered to turn cold prospects into instant buyers.',
+    bullets: [
+      '45+ copy-paste objection-crushing scripts for WhatsApp & Instagram DMs',
+      '24-hour status storytelling sequences that trigger daily inbound enquiries',
+      'Follow-up cadence templates that recover 80% of ghosted prospects',
+      'Includes full EarnMega Pillar 2 Affiliate Marketplace access'
+    ],
+    swipeCopy: {
+      tiktok: [
+        'Why prospects ghost you after asking "How much?" and the exact WhatsApp script that closes 8 out of 10 leads! #whatsappbusiness #earnmega',
+        'Turn your WhatsApp DMs into an automated cash machine with The Mega Messaging Machine!'
+      ],
+      whatsapp: [
+        'Tired of people asking for prices and disappearing? The Mega Messaging Machine (MMM) by Gee Mings fixes your DM conversions immediately: {LINK}',
+        'Copy-paste these exact WhatsApp closing scripts to double your daily sales: {LINK}'
+      ]
+    }
+  },
+  {
+    id: 'prod_day_trading',
+    shortCode: 'TRADING-ROADMAP',
+    title: "Day Trading Beginner's Roadmap",
+    creator: 'Gee Mings (Creator)',
+    category: 'Trading & Finance',
+    badges: ['HIGH CONVERTING', 'SALE'],
+    rating: 4.8,
+    epcUSD: 1.15,
+    avgConvRate: '5.9%',
+    refundRate: '0.4%',
+    priceUSD: 12.00,
+    priceGHS: 192.00,
+    commissionPercent: 50,
+    deliveryUrl: 'https://drive.google.com/drive/folders/1zbDb8kAk-0Tf_SVX2vQUiUDm6NrW_LN33dOv7mLdqzA',
+    headline: 'Master Institutional Chart Structure, Risk Management & Sniper Entries From Scratch',
+    subheadline: 'Stop blowing trading accounts. Learn the exact technical checklist, lot-size math, and execution discipline used by consistent traders.',
+    bullets: [
+      'Candlestick anatomy, liquidity sweeps, and market structure decoded',
+      'Strict 1%–2% risk calculator & stop-loss placement rules',
+      'High-probability London & New York session entry checklist',
+      'Includes full EarnMega Pillar 2 Affiliate Portal access'
+    ],
+    swipeCopy: {
+      tiktok: [
+        "Stop blowing trading accounts because of emotional entries. Here is the Day Trading Beginner's Roadmap every new trader needs! #daytrading #forexghana",
+        'Master chart structure and sniper risk management from scratch. Link in bio!'
+      ],
+      whatsapp: [
+        "If you want to learn day trading the right way without gambling your capital, study Gee Mings' Day Trading Beginner's Roadmap: {LINK}",
+        'Learn institutional chart reading, stop-loss discipline, and daily trade setups here: {LINK}'
+      ]
+    }
+  },
+  {
+    id: 'prod_snapsell',
+    shortCode: 'SNAPSELL-PRO',
+    title: 'SnapSell: Rapid Digital Product Blueprint',
+    creator: 'Gee Mings (Creator)',
+    category: 'Sales',
+    badges: ['TOP PICK', 'HIGH CONVERTING'],
+    rating: 4.9,
+    epcUSD: 1.62,
+    avgConvRate: '7.1%',
+    refundRate: '0.2%',
+    priceUSD: 18.00,
+    priceGHS: 288.00,
+    commissionPercent: 50,
+    deliveryUrl: 'https://drive.google.com/drive/folders/1IhgiK8DYCM8d-a82uImfds_gS4s06D8wvs7WypmFbjE',
+    headline: 'Package, Price & Launch High-Margin Digital Products In Under 48 Hours',
+    subheadline: 'The complete creator blueprint for turning skills into digital courses, ebooks, and templates that sell 24/7.',
+    bullets: [
+      '48-hour product creation framework using AI research & design templates',
+      'High-converting sales page wireframes and pricing psychology',
+      'Automated delivery & affiliate army recruitment blueprint',
+      'Includes full EarnMega Pillar 2 Affiliate Portal access'
+    ],
+    swipeCopy: {
+      tiktok: [
+        'Create once, sell 1,000 times. How to package your knowledge into a digital product in 48 hours using SnapSell! #snapsell #digitalproducts',
+        'The fastest way to launch a digital asset that pays you daily in Cedis and Dollars!'
+      ],
+      whatsapp: [
+        'Want to launch your own digital product and keep 100% of the profit? Check out SnapSell by Gee Mings here: {LINK}',
+        'How to build and automate a digital product funnel this weekend: {LINK}'
+      ]
+    }
+  },
+  {
+    id: 'prod_status_cash',
+    shortCode: 'WA-STATUS-CASH',
+    title: 'WhatsApp Status Cash Machine',
+    creator: 'Gee Mings (Creator)',
+    category: 'Sales',
+    badges: ['HIGH CONVERTING', 'SALE'],
+    rating: 4.7,
+    epcUSD: 0.98,
+    avgConvRate: '8.2%',
+    refundRate: '0.1%',
+    priceUSD: 10.00,
+    priceGHS: 160.00,
+    commissionPercent: 50,
+    deliveryUrl: 'https://drive.google.com/drive/folders/1o7KrzMponCFxIHvCtvJtr1liyAfC-X3qKDkWrFzPWws',
+    headline: 'Convert Your Silent WhatsApp Status Viewers Into Paying Buyers Every Single Day',
+    subheadline: 'Plug-and-play 3-slide status hooks, scarcity timers, and social proof triggers designed for mobile buyers.',
+    bullets: [
+      '30 days of done-for-you WhatsApp Status story sequences',
+      'How to grow your WhatsApp contact list by 50–200 targeted leads/week',
+      'Broadcast list segmentation without getting your number banned',
+      'Includes full EarnMega Pillar 2 Affiliate Portal access'
+    ],
+    swipeCopy: {
+      tiktok: [
+        'Your WhatsApp status views are worth real money if you post this 3-slide sequence! #whatsappstatus #ghanabusiness',
+        'Stop posting memes on your status. Post this 24-hour sequence instead and watch orders roll in!'
+      ],
+      whatsapp: [
+        'Turn your WhatsApp status viewers into paying customers every day with the WhatsApp Status Cash Machine by Gee Mings: {LINK}',
+        'Here is how top affiliates turn 100 status views into daily commissions: {LINK}'
+      ]
+    }
+  },
+  {
+    id: 'prod_ai_agency',
+    shortCode: 'AI-DOLLAR-AGENCY',
+    title: 'AI Freelancing & Remote Dollar Agency Blueprint',
+    creator: 'Gee Mings (Creator)',
+    category: 'AI & Tech',
+    badges: ['TOP PICK', 'HIGH CONVERTING'],
+    rating: 4.9,
+    epcUSD: 1.85,
+    avgConvRate: '6.2%',
+    refundRate: '0.3%',
+    priceUSD: 20.00,
+    priceGHS: 320.00,
+    commissionPercent: 50,
+    deliveryUrl: 'https://drive.google.com/drive/folders/1IhgiK8DYCM8d-a82uImfds_gS4s06D8wvs7WypmFbjE',
+    headline: 'Land Foreign Retainer Clients Paying In USD Using Automated AI Fulfillment',
+    subheadline: 'Acquire international clients in the US, UK & UAE and fulfill copywriting, funnel, and video deliverables in minutes with AI.',
+    bullets: [
+      'Cold outreach scripts for LinkedIn, Upwork, and Instagram that book calls',
+      'AI service fulfillment workflows (deliver $500 projects in 45 minutes)',
+      'International payment setup guide for receiving USD/EUR in Africa & Asia',
+      'Includes full EarnMega Pillar 2 Affiliate Portal access'
+    ],
+    swipeCopy: {
+      tiktok: [
+        'Live anywhere, earn in US Dollars using AI fulfillment systems. Full Remote Dollar Agency Blueprint in bio! #remotework #aifreelancing',
+        'How to land $500/month foreign retainer clients without coding!'
+      ],
+      whatsapp: [
+        'Ready to earn in USD from home using AI tools to fulfill client work? Check out the AI Remote Dollar Agency Blueprint by Gee Mings: {LINK}',
+        'Step-by-step client acquisition and AI service delivery system: {LINK}'
+      ]
+    }
+  }
+];
+
+// ============================================================================
+// 5-STEP RIGOROUS EXAMINATION BANK
+// ============================================================================
+interface ExamQuestion {
+  q: string;
+  options: string[];
+  correctIndex: number;
+}
+
+const FIVE_STEP_EXAM_BANK: Record<number, { title: string; subtitle: string; questions: ExamQuestion[] }> = {
+  1: {
+    title: 'Step 1: Affiliate Tracking & Attribution Mastery',
+    subtitle: 'Score 90% or higher (at least 9/10) to unlock Step 2.',
+    questions: [
+      { q: 'How does EarnMega identify which affiliate referred a paying customer?', options: ['By guessing from social media', 'Via the affiliate’s unique product tracking link (?prod=...&ref=EM-XXXX)', 'By asking the customer a week later', 'Everyone shares the same link'], correctIndex: 1 },
+      { q: 'When is an affiliate commission officially credited to your EarnMega Available Balance?', options: ['When someone clicks the link only', 'When someone views a WhatsApp status', 'Immediately upon verified Paystack purchase completion', 'Before the customer pays'], correctIndex: 2 },
+      { q: 'What is the standard affiliate commission rate across EarnMega core digital products?', options: ['10%', '25%', '50%', '5%'], correctIndex: 2 },
+      { q: 'Who is the official creator of the 6 core launch products in the EarnMega Marketplace?', options: ['Gee Mings (Creator)', 'Anonymous Vendor', 'External Broker', 'Random User'], correctIndex: 0 },
+      { q: 'If a buyer purchases a product through your unique affiliate link, what do they receive?', options: ['Only the affiliate dashboard', 'Both the Digital Product access AND unlocked EarnMega Pillar 2 Affiliate access', 'Nothing until next month', 'Only a receipt'], correctIndex: 1 },
+      { q: 'If a user pays the GH₵ 90 direct registration fee without buying a product through an affiliate product link, what do they unlock?', options: ['All 6 products for free', 'The EarnMega Pillar 2 Affiliate Portal only (no product included)', 'Only Pillar 1 social chat', 'A physical book'], correctIndex: 1 },
+      { q: 'Why must every product have a unique affiliate link per promoter?', options: ['So the system attributes the exact product price, 50% commission, and buyer ID to the right affiliate', 'Just for decoration', 'To slow down checkout', 'It is not needed'], correctIndex: 0 },
+      { q: 'What buyer details are recorded in your EarnMega Sales Ledger when a sale completes?', options: ['Nothing at all', 'Unique Order/Paystack Ref, Buyer Name, Buyer Gmail, Product Title, and 50% Commission', 'Only the country', 'Only the time of day'], correctIndex: 1 },
+      { q: 'Does paying for Pillar 1 automatically unlock Pillar 2 without paying for Pillar 2?', options: ['Yes, they share one paywall', 'No, Pillar 1 and Pillar 2 have strictly separate access gates even on the same Gmail', 'Only on Mondays', 'Only for vendors'], correctIndex: 1 },
+      { q: 'In what settlement currency does EarnMega process Paystack checkouts and Friday payouts?', options: ['Japanese Yen', 'Ghana Cedis (GH₵)', 'Bitcoin only', 'Peso'], correctIndex: 1 },
+    ]
+  },
+  2: {
+    title: 'Step 2: Short-Form Viral Traffic & Hook Engineering',
+    subtitle: 'Score 90% or higher (at least 9/10) to unlock Step 3.',
+    questions: [
+      { q: 'What is the primary goal of the first 3 seconds of a TikTok or Reels promotional video?', options: ['Show a long logo intro', 'Stop the scroll with a pattern-interrupt hook addressing a specific pain point or desire', 'Ask people to log off', 'Play silent black screens'], correctIndex: 1 },
+      { q: 'Where should you direct viewers at the end of a high-retention short-form video?', options: ['To your bio link / WhatsApp funnel containing your unique EarnMega tracking link', 'Nowhere', 'To a random search engine', 'Tell them not to buy'], correctIndex: 0 },
+      { q: 'In The AI Faceless Video Engine workflow, what replaces filming yourself on camera?', options: ['Nothing', 'AI script generation, realistic AI voiceovers, and dynamic visual b-roll', 'Static text only', 'Radio broadcasts'], correctIndex: 1 },
+      { q: 'Which metric most strongly signals the TikTok/Reels algorithm to push your video to 100k+ views?', options: ['Font color', 'High average watch time / completion rate and shares', 'Posting at 3:14 AM only', 'Using 100 hashtags'], correctIndex: 1 },
+      { q: 'For the EarnMega 100K Views Video Contest, what is the cash prize for hitting 100,000+ verified views on TikTok or Instagram?', options: ['GH₵ 100', 'GH₵ 10,000 (convertible to your local currency)', 'GH₵ 500', 'No prize'], correctIndex: 1 },
+      { q: 'Why should you add Sub-IDs (like ?sub=tiktok_bio) to your affiliate links?', options: ['To track which specific video or traffic channel is generating your sales', 'To break the link', 'To hide your code', 'To change the product price'], correctIndex: 0 },
+      { q: 'What is the ideal structure of a 15-second faceless conversion reel?', options: ['Hook (0-3s) -> Agitate Problem & Show Proof (3-11s) -> Clear Call-To-Action (11-15s)', 'Credits first -> Silence -> End', 'Only hashtags', '15 seconds of intro music'], correctIndex: 0 },
+      { q: 'How often should an active affiliate test new short-form hooks for their chosen product?', options: ['Once a year', 'Consistent daily testing (1–3 short videos per day)', 'Never', 'Once every 6 months'], correctIndex: 1 },
+      { q: 'What tool inside EarnMega Pillar 2 gives you ready-made TikTok and WhatsApp promotional copy?', options: ['The Swipe Vault & AI Funnel Tools', 'The Logout button', 'The Password tab', 'None'], correctIndex: 0 },
+      { q: 'When promoting on TikTok, why is routing traffic to a WhatsApp Auto-Closer link or Bio-Link effective?', options: ['It warms up cold viewers and lets you answer objections on WhatsApp before they pay on Paystack', 'It blocks buyers', 'It deletes cookies', 'It hides the checkout'], correctIndex: 0 },
+    ]
+  },
+  3: {
+    title: 'Step 3: WhatsApp Status & DM Conversion Funnel (MMM)',
+    subtitle: 'Score 90% or higher (at least 9/10) to unlock Step 4.',
+    questions: [
+      { q: 'What is the 3-step WhatsApp Status conversion sequence taught in EarnMega?', options: ['Slide 1: Pain/Hook -> Slide 2: Value/Social Proof -> Slide 3: Scarcity + Unique Affiliate Link', 'Post 50 random memes', 'Post only good morning images', 'Never post links'], correctIndex: 0 },
+      { q: 'When a prospect asks "How much is it?" in your DM, what mistake causes them to ghost?', options: ['Replying with just a bare price number without framing the value and transformation first', 'Being polite', 'Sending your affiliate link when they are ready', 'Using voice notes'], correctIndex: 0 },
+      { q: 'How does the EarnMega Abandoned Checkout Lead CRM help you close more sales?', options: ['It shows you buyers who filled Step 1 of checkout so you can message them on WhatsApp to complete payment', 'It deletes their email', 'It blocks their phone number', 'It hides their name'], correctIndex: 0 },
+      { q: 'What is a "1-Click Order Bump" recommendation from the EarnMega AI Business Brain?', options: ['Pairing your core offer with a complementary add-on at checkout + WhatsApp sync to boost order value', 'Closing the store', 'Removing the buy button', 'Lowering commission to 0%'], correctIndex: 0 },
+      { q: 'When following up with a warm WhatsApp lead after 24 hours, what works best?', options: ['Sending angry messages', 'Sharing a fresh student result/testimonial and asking if they had any questions about getting started', 'Blocking them immediately', 'Spamming 30 links in 1 minute'], correctIndex: 1 },
+      { q: 'Why should you save every new WhatsApp lead’s contact and have them save yours?', options: ['So they can view your daily 24-hour WhatsApp Status sequences where 80% of conversions happen', 'No reason', 'To fill phone storage', 'To stop them from buying'], correctIndex: 0 },
+      { q: 'What does EPC stand for on the EarnMega Marketplace product cards?', options: ['Earnings Per Click (average commission earned per link click)', 'Extra Product Cost', 'Email Password Check', 'End Page Code'], correctIndex: 0 },
+      { q: 'If a buyer in Nigeria, Kenya, or India opens your EarnMega checkout link, how do they see the price?', options: ['They can preview the price in their local currency using the Worldwide Converter while Paystack settles in GH₵', 'They cannot see any price', 'Only in Japanese Yen', 'The page crashes'], correctIndex: 0 },
+      { q: 'What should a buyer ensure when typing their Email Address on Step 1 of the Digitstem-style checkout?', options: ['Use a fake email', 'Ensure their Email Address is CORRECT, ACTIVE, and ACCESSIBLE to receive instant access', 'Leave it blank', 'Type a phone number instead'], correctIndex: 1 },
+      { q: 'How can you use the EarnMega Social Proof Flyer Generator to boost WhatsApp sales?', options: ['Generate a verified commission status card and post it on your status to build credibility', 'Keep it hidden', 'Delete it', 'Send it to competitors only'], correctIndex: 0 },
+    ]
+  },
+  4: {
+    title: 'Step 4: Financial Risk, Pricing & Payout Governance',
+    subtitle: 'Score 90% or higher (at least 9/10) to unlock Step 5.',
+    questions: [
+      { q: 'On which day of the week does the EarnMega Affiliate Payout window open for withdrawals?', options: ['Every Monday', 'Strictly on Fridays (GMT)', 'Only on New Year’s Day', 'Every Tuesday'], correctIndex: 1 },
+      { q: 'What payout channels are supported for Friday withdrawals in EarnMega Pillar 2?', options: ['Mobile Money (MTN, Telecel, AT), Bank Transfer, and USDT (TRC20)', 'Cash in envelope only', 'Gift cards only', 'Checks by mail'], correctIndex: 0 },
+      { q: 'When you submit a Friday payout request, where is the payout ticket dispatched for OTP-verified Paystack Transfer?', options: ['Nowhere', 'Directly to earnmegadesk@gmail.com and the Admin Command Centre', 'To random users', 'To social media'], correctIndex: 1 },
+      { q: 'In the Day Trading Beginner’s Roadmap, what is the golden rule of capital preservation per trade?', options: ['Risk 100% of your account on one trade', 'Risk only a small fixed percentage (1%–2%) with a hard stop-loss', 'Never use a stop-loss', 'Revenge trade after a loss'], correctIndex: 1 },
+      { q: 'Why must your Account Holder Name in the Payout Center match your registered Mobile Money or Bank name?', options: ['To pass Paystack Transfer verification and prevent failed/rejected payouts', 'It does not matter', 'So the font looks nice', 'To delay payment'], correctIndex: 0 },
+      { q: 'If a product sells for GH₵ 240 with a 50% commission rate, how much is credited to your balance per sale?', options: ['GH₵ 24.00', 'GH₵ 120.00', 'GH₵ 240.00', 'GH₵ 50.00'], correctIndex: 1 },
+      { q: 'How many sales of a GH₵ 240 product (GH₵ 120 commission) do you need to earn GH₵ 1,200 in commissions?', options: ['100 sales', '10 sales', '2 sales', '50 sales'], correctIndex: 1 },
+      { q: 'Can two different affiliates receive commission from the exact same single transaction?', options: ['Yes, everyone gets paid', 'No, the sale is attributed strictly to the referring affiliate code locked at checkout', 'Up to 10 affiliates', 'Only if they ask'], correctIndex: 1 },
+      { q: 'What happens if someone clicks your affiliate link 50 times but never completes payment?', options: ['You earn GH₵ 500', 'Your commission is GH₵ 0.00 because only completed purchases generate commission', 'You get a bonus', 'The product becomes free'], correctIndex: 1 },
+      { q: 'What happens if a transaction is fraudulent or refunded under platform compliance rules?', options: ['Refunds and chargebacks can void or claw back unverified commissions', 'Nothing', 'Commission doubles', 'Account gets 10x bonus'], correctIndex: 0 },
+    ]
+  },
+  5: {
+    title: 'Step 5: Creator Whitelist, Compliance & Scaling Certification',
+    subtitle: 'Score 90% or higher (at least 9/10) to unlock your Official Certificate!',
+    questions: [
+      { q: 'How does a digital product creator apply to list their own course on the EarnMega Vendor Marketplace?', options: ['Anyone can upload spam without review', 'Via the Creator Whitelist Portal by sending product details, sales page & commission split to earnmegadesk@gmail.com for QA approval', 'By posting in comments', 'Not allowed'], correctIndex: 1 },
+      { q: 'What happens after your Creator/Vendor product application is reviewed and approved by EarnMega QA?', options: ['You receive a congratulations message and vendor listing fee instructions to unlock your Creator Desk', 'Nothing happens', 'Your account closes', 'It is deleted'], correctIndex: 0 },
+      { q: 'What are the official EarnMega Affiliate Support channels if you need help with a sale or payout?', options: ['earnmegadesk@gmail.com and WhatsApp 0596096071', 'No support exists', 'Only physical mail', 'Fax machine'], correctIndex: 0 },
+      { q: 'When your sales counter reaches a Contest Milestone (e.g. 50/50 sales), what unlocks on your Contest card?', options: ['An instant "Alert Admin Command Centre & Claim Reward" button', 'The screen turns off', 'Your sales reset to zero', 'Nothing'], correctIndex: 0 },
+      { q: 'What is strictly prohibited under EarnMega Official Rules & Regulations?', options: ['Promoting with honest swipe copy', 'False income guarantees, spam links, or sharing account passwords', 'Using the Profit Calculator', 'Sharing QR codes'], correctIndex: 1 },
+      { q: 'How does the EarnMega Bio-Link / LinkHub help you promote multiple products at once?', options: ['It creates a single personal storefront URL displaying all 6 products with your affiliate code attached', 'It deletes your links', 'It only works offline', 'It blocks mobile users'], correctIndex: 0 },
+      { q: 'Where can you update your Pillar 2 First Name, Last Name, Phone Number, Address, and KYC ID?', options: ['Inside the Profile & Details / Account Information (KYC) modal from the top-right Profile button', 'You can never change it', 'Only by creating a new Gmail', 'Nowhere'], correctIndex: 0 },
+      { q: 'Before claiming the GH₵ 10,000 TikTok/Instagram 100K Views Prize, what details must you submit in the Contest Portal?', options: ['Only your first name', 'Your TikTok/IG handle, public video link showing 100k+ views, full name, phone, and Bank/MoMo payout details', 'A screenshot of someone else’s account', 'Nothing'], correctIndex: 1 },
+      { q: 'Why is combining Short-Form Video (TikTok/Reels) + WhatsApp Closing the highest-converting affiliate strategy?', options: ['Short-form video brings free daily traffic while WhatsApp Status & DMs build trust and close the sale', 'Because it requires $10,000 in ad spend', 'It is not effective', 'Only works in one city'], correctIndex: 0 },
+      { q: 'Upon passing all 5 steps of this examination with 90%+ accuracy, what do you earn?', options: ['An Official Personalized EarnMega Certificate of Completion with a unique verification ID', 'Nothing', 'A penalty', 'Account suspension'], correctIndex: 0 },
+    ]
+  }
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+export default function EarnMegaAffiliatePillar({
+  currentProfile,
+  onRefreshProfile
+}: {
+  currentProfile?: any;
+  onRefreshProfile?: () => void;
+}) {
+  type ActiveSection =
+    | 'dashboard'
+    | 'marketplace'
+    | 'links'
+    | 'exam'
+    | 'contests'
+    | 'payouts'
+    | 'ledger'
+    | 'vault'
+    | 'ai_tools'
+    | 'leads_crm'
+    | 'calculator'
+    | 'creator'
+    | 'rules'
+    | 'profile'
+    | 'notifications'
+    | 'support' | 'my_courses';
+
+  const [activeSection, setActiveSection] = useState<ActiveSection>('dashboard');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('GHS');
+  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
+  const [isProfileSheetOpen, setIsProfileSheetOpen] = useState<boolean>(false);
+  const [activeSettingsModal, setActiveSettingsModal] = useState<
+    null | 'profile' | 'kyc' | 'notifications' | 'security' | '2fa' | 'support' | 'pillar2_onboarding'
+  >(null);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
+  const [isAiBotOpen, setIsAiBotOpen] = useState<boolean>(false);
+
+  const [userId, setUserId] = useState<string | null>(currentProfile?.id || null);
+  const [userAffiliateCode, setUserAffiliateCode] = useState<string>(
+    currentProfile?.affiliate_code || 'EM-DB3E04'
+  );
+  const [firstName, setFirstName] = useState<string>('Gerald');
+  const [lastName, setLastName] = useState<string>('Mingle');
+  const [pillar2Email, setPillar2Email] = useState<string>(
+    currentProfile?.email || 'geemingle15@gmail.com'
+  );
+  const [pillar2DialCode, setPillar2DialCode] = useState<string>('+233');
+  const [pillar2Phone, setPillar2Phone] = useState<string>('2330596096071');
+  const [pillar2Country, setPillar2Country] = useState<string>('Ghana');
+  const [pillar2State, setPillar2State] = useState<string>('Greater Accra');
+  const [pillar2City, setPillar2City] = useState<string>('Accra');
+  const [pillar2Zip, setPillar2Zip] = useState<string>('GA543');
+  const [pillar2Address, setPillar2Address] = useState<string>('Dansoman');
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState<boolean>(true);
+  const [kycIdType, setKycIdType] = useState<string>('Ghana Card / National ID');
+  const [kycIdNumber, setKycIdNumber] = useState<string>('');
+  const [kycVerified, setKycVerified] = useState<boolean>(true);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState<boolean>(false);
+  const [settingsSavedBanner, setSettingsSavedBanner] = useState<string | null>(null);
+  const [downloadSuccessBanner, setDownloadSuccessBanner] = useState<string | null>(null);
+
+  const [availableBalanceGHS, setAvailableBalanceGHS] = useState<number>(
+    Number(currentProfile?.affiliate_balance || 0)
+  );
+  const [totalEarningsGHS, setTotalEarningsGHS] = useState<number>(0);
+  const [withdrawnBalanceGHS, setWithdrawnBalanceGHS] = useState<number>(
+    Number(currentProfile?.total_withdrawn || 0)
+  );
+  const [pendingEscrowGHS, setPendingEscrowGHS] = useState<number>(0);
+  const [totalSalesCount, setTotalSalesCount] = useState<number>(0);
+  const [unlockedProductIds, setUnlockedProductIds] = useState<string[]>([]);
+  const [totalClicksCount, setTotalClicksCount] = useState<number>(48);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState<boolean>(false);
+  const [depositAmountGHS, setDepositAmountGHS] = useState<string>('');
+  const [depositMethod, setDepositMethod] = useState<string>('MOBILE_MONEY');
+  const [depositVerifyCode, setDepositVerifyCode] = useState<string>('');
+  const [depositStep, setDepositStep] = useState<number>(1);
+  const [isGeneratingCode, setIsGeneratingCode] = useState<boolean>(false);
+
+  const [licenseActivatedAt, setLicenseActivatedAt] = useState<number>(Date.now());
+  const [licenseExpiresAt, setLicenseExpiresAt] = useState<number>(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  const [timeRemaining, setTimeRemaining] = useState({ days: 365, hours: 0, minutes: 0, seconds: 0, expired: false });
+  const expiryAlertSentRef = useRef<boolean>(false);
+
+  const [isRenewalModalOpen, setIsRenewalModalOpen] = useState<boolean>(false);
+
+  const [products, setProducts] = useState<MarketplaceProduct[]>(INITIAL_PRODUCTS);
+  const [linkTags, setLinkTags] = useState<Record<string, string>>({});
+  const [marketSearch, setMarketSearch] = useState<string>('');
+  const [marketFilter, setMarketFilter] = useState<string>('All Offers');
+const [promoteModalProduct, setPromoteModalProduct] = useState<MarketplaceProduct | null>(null);
+  const [detailsModalProduct, setDetailsModalProduct] = useState<MarketplaceProduct | null>(null);
+
+  const [activeSalesPageProduct, setActiveSalesPageProduct] = useState<MarketplaceProduct | null>(null);
+  const [isDirectEnrollmentCheckout, setIsDirectEnrollmentCheckout] = useState<boolean>(false);
+  const [referredByCode, setReferredByCode] = useState<string>('EM-DB3E04');
+  const [checkoutStep, setCheckoutStep] = useState<null | 1 | 2>(null);
+  const [buyerFullName, setBuyerFullName] = useState<string>('');
+  const [buyerCountry, setBuyerCountry] = useState<string>('Ghana');
+  const [buyerDialCode, setBuyerDialCode] = useState<string>('+233');
+  const [buyerPhone, setBuyerPhone] = useState<string>('');
+  const [buyerEmail, setBuyerEmail] = useState<string>('');
+  const [includeOrderBump, setIncludeOrderBump] = useState<boolean>(false);
+
+  const [transactions, setTransactions] = useState<
+    Array<{
+      id: string;
+      orderUid: string;
+      reference: string;
+      productTitle: string;
+      amountGHS: number;
+      commissionGHS: number;
+      buyerName: string;
+      buyerEmail: string;
+      buyerPhone: string;
+      date: string;
+      status: string;
+    }>
+  >([]);
+
+  const [notificationsList, setNotificationsList] = useState<
+    Array<{
+      id: string;
+      title: string;
+      subtitle: string;
+      amountGHS: number;
+      timeAgo: string;
+      read: boolean;
+    }>
+  >([
+    {
+      id: 'notif-1',
+      title: 'Welcome to EarnMega Affiliate Hub',
+      subtitle: 'Your unique affiliate links & 50% instant commission tracking are active.',
+      amountGHS: 0,
+      timeAgo: 'Just now',
+      read: false
+    }
+  ]);
+
+  const [abandonedLeads, setAbandonedLeads] = useState<
+    Array<{
+      id: string;
+      fullName: string;
+      email: string;
+      phone: string;
+      country: string;
+      productTitle: string;
+      amountGHS: number;
+      createdAt: string;
+    }>
+  >([]);
+
+  const [examProductId, setExamProductId] = useState<string>(INITIAL_PRODUCTS[0].id);
+  const [currentExamStep, setCurrentExamStep] = useState<number>(1);
+  const [unlockedExamStep, setUnlockedExamStep] = useState<number>(1);
+  const [examAnswers, setExamAnswers] = useState<Record<number, number>>({});
+  const [examStepResult, setExamStepResult] = useState<{
+    scorePercent: number;
+    passed: boolean;
+    correctCount: number;
+    total: number;
+  } | null>(null);
+  const [certificateUnlocked, setCertificateUnlocked] = useState<boolean>(false);
+  const [certificateStudentName, setCertificateStudentName] = useState<string>('Gerald Mingle');
+  const [certificateCode, setCertificateCode] = useState<string>('EM-CERT-908421');
+
+  const [registeredContests, setRegisteredContests] = useState<string[]>([]);
+  const [contestModalOpen, setContestModalOpen] = useState<null | 'register_sales' | 'viral_100k' | 'sales_50' | 'sales_100'>(null);
+  const [contestFullName, setContestFullName] = useState<string>('');
+  const [contestPhone, setContestPhone] = useState<string>('');
+  const [contestSocialHandle, setContestSocialHandle] = useState<string>('');
+  const [contestVideoUrl, setContestVideoUrl] = useState<string>('');
+  const [contestBankMomoDetails, setContestBankMomoDetails] = useState<string>('');
+  const [contestStatusBanner, setContestStatusBanner] = useState<string | null>(null);
+  const [adminMilestoneAlertSent, setAdminMilestoneAlertSent] = useState<boolean>(false);
+
+  const [payoutChannel, setPayoutChannel] = useState<'MOBILE_MONEY' | 'BANK_TRANSFER' | 'CRYPTO_USDT'>('MOBILE_MONEY');
+  const [accountHolderName, setAccountHolderName] = useState<string>('');
+  const [momoNetwork, setMomoNetwork] = useState<string>('MTN');
+  const [momoNumber, setMomoNumber] = useState<string>('');
+  const [bankName, setBankName] = useState<string>('GCB Bank');
+  const [bankAccount, setBankAccount] = useState<string>('');
+  const [usdtAddress, setUsdtAddress] = useState<string>('');
+  const [payoutAmountGHS, setPayoutAmountGHS] = useState<string>('');
+  const [payoutFeedback, setPayoutFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isSubmittingPayout, setIsSubmittingPayout] = useState<boolean>(false);
+
+  const [calcProductId, setCalcProductId] = useState<string>(INITIAL_PRODUCTS[0].id);
+  const [calcDailySales, setCalcDailySales] = useState<number>(3);
+
+  const [aiInput, setAiInput] = useState<string>('');
+  const [aiMessages, setAiMessages] = useState<Array<{ sender: 'bot' | 'user'; text: string }>>([
+    {
+      sender: 'bot',
+      text: "Hello! 👋 I'm your EarnMega AI Business Brain. I understand your products, sales, customers, and 50% commission engine. Ask me anything!"
+    }
+  ]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const prodParam = params.get('prod');
+      const refParam = params.get('ref');
+
+      if (refParam) {
+        localStorage.setItem('earnmega_affiliate_ref', refParam);
+        setReferredByCode(refParam);
+      } else {
+        const savedRef = localStorage.getItem('earnmega_affiliate_ref');
+        if (savedRef) setReferredByCode(savedRef);
+      }
+
+      if (prodParam) {
+        const matched = INITIAL_PRODUCTS.find(
+          (p) => p.id === prodParam || p.shortCode.toLowerCase() === prodParam.toLowerCase()
+        );
+        if (matched) {
+          setActiveSalesPageProduct(matched);
+        }
+      }
+    }
+    loadSupabaseData();
+  }, [currentProfile]);
+
+  const loadSupabaseData = async () => {
+    try {
+      let activeUid = currentProfile?.id;
+      let activeMail = currentProfile?.email;
+
+      if (!activeUid) {
+        const { data: authData } = await supabase.auth.getUser();
+        activeUid = authData?.user?.id;
+        activeMail = authData?.user?.email || '';
+      }
+
+      if (!activeUid) return;
+      setUserId(activeUid);
+
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', activeUid)
+        .single();
+
+      if (prof) {
+        const fullNameStr = prof.name || prof.username || 'Gerald Mingle';
+        const parts = fullNameStr.split(' ');
+        setFirstName(prof.pillar2_first_name || parts[0] || 'Gerald');
+        setLastName(prof.pillar2_last_name || parts.slice(1).join(' ') || 'Mingle');
+        setCertificateStudentName(
+          `${prof.pillar2_first_name || parts[0] || 'Gerald'} ${prof.pillar2_last_name || parts.slice(1).join(' ') || 'Mingle'}`.trim()
+        );
+        setPillar2Email(prof.pillar2_email || prof.email || activeMail || 'geemingle15@gmail.com');
+        if (prof.pillar2_phone) setPillar2Phone(prof.pillar2_phone);
+        if (prof.pillar2_country) setPillar2Country(prof.pillar2_country);
+        if (prof.pillar2_city) setPillar2City(prof.pillar2_city);
+        if (prof.pillar2_address) setPillar2Address(prof.pillar2_address);
+        if (prof.affiliate_code) setUserAffiliateCode(prof.affiliate_code);
+        setAvailableBalanceGHS(Number(prof.affiliate_balance || 0));
+        setWithdrawnBalanceGHS(Number(prof.total_withdrawn || 0));
+      }
+
+      const { data: salesRows } = await supabase
+        .from('affiliate_sales')
+        .select('*')
+        .or(`affiliate_id.eq.${activeUid},affiliate_user_id.eq.${activeUid}`)
+        .order('created_at', { ascending: false });
+
+      if (salesRows && salesRows.length > 0) {
+        setTotalSalesCount(salesRows.length);
+        const totalComm = salesRows.reduce(
+          (acc: number, row: any) => acc + Number(row.commission_ghs || 0),
+          0
+        );
+        setTotalEarningsGHS(totalComm);
+
+        const mappedTx = salesRows.map((row: any, idx: number) => ({
+          id: row.id || `tx-${idx}`,
+          orderUid: `ORD-${(row.id || '889120').toString().slice(0, 6).toUpperCase()}`,
+          reference: row.paystack_reference || `EM-REF-${idx}`,
+          productTitle: row.product_title || row.product_name || 'EarnMega Digital Asset',
+          amountGHS: Number(row.gross_amount_ghs || row.amount_paid_ghs || 240),
+          commissionGHS: Number(row.commission_ghs || 120),
+          buyerName: row.buyer_name || 'Verified Customer',
+          buyerEmail: row.buyer_email || 'buyer@gmail.com',
+          buyerPhone: row.sub_id || '+233XXXXXXXXX',
+          date: new Date(row.created_at).toISOString().replace('T', ' ').substring(0, 16),
+          status: (row.status || 'COMPLETED').toUpperCase()
+        }));
+        setTransactions(mappedTx);
+      }
+    } catch (e) {
+      console.error('Error loading Pillar 2 data:', e);
+    }
+  };
+
+  const formatAmount = (amountGHS: number, currencyOverride?: string): string => {
+    const code = currencyOverride || selectedCurrency;
+    const rateObj = GLOBAL_CURRENCIES[code] || GLOBAL_CURRENCIES.GHS;
+    const converted = amountGHS / rateObj.rateToGHS;
+    return `${rateObj.symbol} ${converted.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  };
+
+  const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://www.earnmega.com';
+
+  const getUniqueProductAffiliateLink = (product: MarketplaceProduct, customSub?: string) => {
+    const cleanCode = userAffiliateCode || 'EM-DB3E04';
+    const uniqueToken = `${cleanCode}-${product.shortCode}`;
+    const subParam = customSub ? `&sub=${encodeURIComponent(customSub)}` : '';
+    return `${appOrigin}/affiliate?prod=${product.id}&ref=${cleanCode}&token=${uniqueToken}${subParam}`;
+  };
+
+  const handleCopy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2200);
+  };
+
+  const openDigitstemCheckoutForProduct = (product: MarketplaceProduct) => {
+    setIsDirectEnrollmentCheckout(false);
+    setActiveSalesPageProduct(product);
+    setCheckoutStep(1);
+  };
+
+  const openDirectPillar2EnrollmentCheckout = () => {
+    setIsDirectEnrollmentCheckout(true);
+    setCheckoutStep(1);
+  };
+
+  const handleCheckoutStep1Next = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!buyerFullName.trim() || !buyerPhone.trim() || !buyerEmail.trim()) {
+      alert('Please complete your Full Name, Phone Number, and active Email Address.');
+      return;
+    }
+
+const targetTitle = isDirectEnrollmentCheckout
+      ? 'EarnMega Pillar 2 Direct Affiliate Access (No Product)'
+      : activeSalesPageProduct?.title || 'EarnMega Digital Product';
+    const targetAmountGHS = isDirectEnrollmentCheckout
+      ? DIRECT_ENROLLMENT_GHS
+      : (activeSalesPageProduct?.priceGHS || 240) + (includeOrderBump ? 80 : 0);
+
+    const newLead = {
+      id: `lead-${Date.now()}`,
+      fullName: buyerFullName,
+      email: buyerEmail,
+      phone: `${buyerDialCode}${buyerPhone.replace(/^0+/, '')}`,
+      country: buyerCountry,
+      productTitle: targetTitle,
+      amountGHS: targetAmountGHS,
+      createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16)
+    };
+    setAbandonedLeads((prev) => [newLead, ...prev]);
+
+    try {
+      await supabase.from('affiliate_checkout_leads').insert({
+        affiliate_code: referredByCode || userAffiliateCode,
+        product_id: isDirectEnrollmentCheckout ? 'direct_90' : activeSalesPageProduct?.id || 'prod_faceless_ai',
+        product_title: targetTitle,
+        buyer_full_name: buyerFullName,
+        buyer_email: buyerEmail,
+        buyer_phone: `${buyerDialCode}${buyerPhone.replace(/^0+/, '')}`,
+        buyer_country: buyerCountry,
+        amount_ghs: targetAmountGHS
+      });
+    } catch (_) {}
+
+    const nameSplit = buyerFullName.trim().split(' ');
+    setFirstName(nameSplit[0] || firstName);
+    setLastName(nameSplit.slice(1).join(' ') || lastName);
+    setPillar2Email(buyerEmail);
+    setPillar2Phone(`${buyerDialCode}${buyerPhone.replace(/^0+/, '')}`);
+    setPillar2Country(buyerCountry);
+
+    setCheckoutStep(2);
+  };
+
+  const completeVerifiedPurchaseRecord = async (reference: string) => {
+    const isDirect = isDirectEnrollmentCheckout;
+    const prod = activeSalesPageProduct || INITIAL_PRODUCTS[0];
+    const baseGHS = isDirect ? DIRECT_ENROLLMENT_GHS : prod.priceGHS + (includeOrderBump ? 80 : 0);
+    const commGHS = isDirect ? 0 : Number((baseGHS * (prod.commissionPercent / 100)).toFixed(2));
+    const uniqueOrderUid = `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+    const fullPhone = `${buyerDialCode}${buyerPhone.replace(/^0+/, '')}`;
+
+    try {
+      await supabase.rpc('record_verified_affiliate_sale', {
+        p_paystack_ref: reference,
+        p_product_id: isDirect ? 'pillar2_direct_90' : prod.id,
+        p_product_title: isDirect ? 'EarnMega Pillar 2 Direct Enrollment (No Product)' : prod.title,
+        p_buyer_user_id: userId,
+        p_buyer_name: buyerFullName,
+        p_buyer_email: buyerEmail,
+        p_affiliate_code: referredByCode || userAffiliateCode,
+        p_sub_id: fullPhone,
+        p_gross_ghs: baseGHS,
+        p_gross_usd: Number((baseGHS / 16).toFixed(2)),
+        p_commission_ghs: commGHS,
+        p_commission_usd: Number((commGHS / 16).toFixed(2)),
+        p_delivery_url: isDirect ? '' : prod.deliveryUrl
+      });
+    } catch (_) {}
+
+    if (!isDirect) {
+      const txItem = {
+        id: `tx-${Date.now()}`,
+        orderUid: uniqueOrderUid,
+        reference,
+        productTitle: prod.title,
+        amountGHS: baseGHS,
+        commissionGHS: commGHS,
+        buyerName: buyerFullName,
+        buyerEmail: buyerEmail,
+        buyerPhone: fullPhone,
+        date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        status: 'COMPLETED'
+      };
+      setTransactions((prev) => [txItem, ...prev]);
+      setAvailableBalanceGHS((prev) => prev + commGHS);
+      setTotalEarningsGHS((prev) => prev + commGHS);
+      setTotalSalesCount((prev) => prev + 1);
+    }
+
+    setCheckoutStep(null);
+    setActiveSalesPageProduct(null);
+    onRefreshProfile?.();
+
+    if (isDirect) {
+      alert(
+        `✅ Direct Enrollment Confirmed!\n\nProfile Created For: ${buyerFullName} (${buyerEmail})\nYou now have full access to the EarnMega Pillar 2 Affiliate Hub.`
+      );
+    } else {
+      alert(
+        `✅ Payment Confirmed!\n\nUnique Purchase ID: ${uniqueOrderUid}\nBuyer: ${buyerFullName} (${buyerEmail})\nProduct Unlocked: ${prod.title}\nAffiliate Credited Instantly: GH₵ ${commGHS.toFixed(2)}`
+      );
+      window.open(prod.deliveryUrl, '_blank');
+    }
+  };
+
+  const launchPaystackFromStep2 = () => {
+    const isDirect = isDirectEnrollmentCheckout;
+    const prod = activeSalesPageProduct || INITIAL_PRODUCTS[0];
+    const payableGHS = isDirect ? DIRECT_ENROLLMENT_GHS : prod.priceGHS + (includeOrderBump ? 80 : 0);
+    const ref = `EM_P2_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const openPopup = () => {
+      const PaystackPop = (window as any).PaystackPop;
+      if (!PaystackPop || !PAYSTACK_PUBLIC_KEY) {
+        completeVerifiedPurchaseRecord(ref);
+        return;
+      }
+      const metadata: any = {
+        user_id: userId,
+        email: buyerEmail || pillar2Email,
+        payment_type: isDirect ? 'P2_LICENSE' : 'PRODUCT_PURCHASE',
+      };
+      if (!isDirect) {
+        metadata.product_id = prod.id;
+        metadata.affiliate_code = referredByCode || userAffiliateCode;
+      }
+      const handler = PaystackPop.setup({
+        key: PAYSTACK_PUBLIC_KEY,
+        email: buyerEmail || pillar2Email,
+        amount: Math.round(payableGHS * 100),
+        currency: 'GHS',
+        ref,
+        metadata: metadata,
+        callback: (response: any) => {
+          completeVerifiedPurchaseRecord(response?.reference || ref);
+        }
+      });
+      handler.openIframe();
+    };
+
+    if (typeof window !== 'undefined' && !(window as any).PaystackPop) {
+      const script = document.createElement('script');
+      script.src = 'https://js.paystack.co/v1/inline.js';
+      script.async = true;
+      script.onload = openPopup;
+      script.onerror = () => completeVerifiedPurchaseRecord(ref);
+      document.body.appendChild(script);
+    } else {
+      openPopup();
+    }
+  };
+
+  const handleSavePillar2Profile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCertificateStudentName(`${firstName} ${lastName}`.trim());
+    if (userId) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({
+            pillar2_first_name: firstName,
+            pillar2_last_name: lastName,
+            pillar2_email: currentProfile?.email || pillar2Email,
+            pillar2_phone: pillar2Phone,
+            pillar2_country: pillar2Country,
+            pillar2_city: pillar2City,
+            pillar2_address: pillar2Address,
+            pillar2_push_notifications: pushNotificationsEnabled,
+            pillar2_kyc_id_type: kycIdType,
+            pillar2_kyc_id_number: kycIdNumber,
+            pillar2_2fa_enabled: twoFactorEnabled
+          })
+          .eq('id', userId);
+      } catch (_) {}
+    }
+    setSettingsSavedBanner('✅ Pillar 2 Profile & Settings saved independently!');
+    setTimeout(() => setSettingsSavedBanner(null), 3500);
+  };
+
+  const handleDownloadCertificate = async () => {
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      canvas.width = 2000;
+      canvas.height = 1414;
+
+      ctx.fillStyle = '#060A14';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 12;
+      ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#FDE68A';
+      ctx.font = 'bold 60px serif';
+      ctx.fillText('EARNMEGA EXECUTIVE ACADEMY', canvas.width / 2, 200);
+
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = '30px sans-serif';
+      ctx.fillText('OFFICIAL CHARTER OF DIGITAL & AFFILIATE MASTERY', canvas.width / 2, 260);
+
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = '40px serif';
+      ctx.fillText('THIS PROUDLY CERTIFIES THAT', canvas.width / 2, 420);
+
+      ctx.fillStyle = '#FDE68A';
+      ctx.font = 'bold italic 100px serif';
+      const formattedName = certificateStudentName.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+      ctx.fillText(formattedName, canvas.width / 2, 550);
+
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `EarnMega-Certificate-${certificateCode}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setDownloadSuccessBanner('Official High-Res Certificate downloaded!');
+        setTimeout(() => setDownloadSuccessBanner(null), 4000);
+      }, 'image/png');
+    } catch (e) {
+      console.error('Error generating certificate:', e);
+    }
+  };
+
+  const handleGradeExamStep = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const stepData = FIVE_STEP_EXAM_BANK[currentExamStep];
+    if (!stepData) return;
+
+    let correct = 0;
+    stepData.questions.forEach((qItem, idx) => {
+      if (examAnswers[idx] === qItem.correctIndex) {
+        correct += 1;
+      }
+    });
+
+    const total = stepData.questions.length;
+    const scorePercent = Math.round((correct / total) * 100);
+    const passed = scorePercent >= 90;
+
+    setExamStepResult({ scorePercent, passed, correctCount: correct, total });
+
+    if (passed) {
+      if (currentExamStep < 5) {
+        const nextStep = currentExamStep + 1;
+        if (unlockedExamStep < nextStep) setUnlockedExamStep(nextStep);
+      } else {
+        const newCertCode = `EM-CERT-${Math.floor(100000 + Math.random() * 900000)}`;
+        setCertificateCode(newCertCode);
+        setCertificateUnlocked(true);
+      }
+    }
+  };
+
+  const handleContestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const isViral = contestModalOpen === 'viral_100k';
+    const type = isViral ? 'VIRAL_VIDEO_CONTEST_CLAIM' : 'CONTEST_REGISTRATION';
+
+    try {
+      await supabase.from('affiliate_contest_entries').insert({
+        user_id: userId,
+        affiliate_code: userAffiliateCode,
+        contest_type: type,
+        full_name: contestFullName || `${firstName} ${lastName}`,
+        email: pillar2Email,
+        phone: contestPhone || pillar2Phone,
+        social_handle: contestSocialHandle,
+        video_url: contestVideoUrl,
+        payout_details: contestBankMomoDetails,
+        sales_count: totalSalesCount
+      });
+    } catch (_) {}
+
+    if (!isViral) {
+      setRegisteredContests((prev) => [...prev, 'sales_50']);
+    }
+    setContestModalOpen(null);
+    setContestStatusBanner(
+      isViral
+        ? `🎉 Your 100K Views Video application has been sent to earnmegadesk@gmail.com!`
+        : `✅ You are officially registered for the Sales Challenge!`
+    );
+  };
+
+  const triggerAdminMilestoneAlert = async () => {
+    setAdminMilestoneAlertSent(true);
+    alert(`🚨 Admin Command Centre Alert Dispatched to earnmegadesk@gmail.com!`);
+  };
+
+  const isFridayGMT = useMemo(() => new Date().getUTCDay() === 5, []);
+
+  const handleCompleteRenewal = async () => {
+    setLicenseActivatedAt(Date.now());
+    setLicenseExpiresAt(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    expiryAlertSentRef.current = false;
+    setIsRenewalModalOpen(false);
+    alert('✅ License Successfully Renewed for 1 Year!');
+  };
+
+  const handleConfirmDeposit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!depositVerifyCode || depositVerifyCode.length < 5) {
+      alert('Please enter a valid verification code.');
+      return;
+    }
+
+    const addedGHS = Number(depositAmountGHS);
+    if (addedGHS <= 0) return;
+
+    setAvailableBalanceGHS(prev => Number((prev + addedGHS).toFixed(2)));
+
+    if (userId) {
+      try {
+        await supabase.rpc('increment_affiliate_balance', { p_user_id: userId, p_amount_ghs: addedGHS });
+      } catch (_) {}
+    }
+
+    setIsDepositModalOpen(false);
+    setDepositStep(1);
+    setDepositVerifyCode('');
+    setDepositAmountGHS('');
+    setIsGeneratingCode(false);
+
+    setDownloadSuccessBanner(`✓ Deposit of GH₵ ${addedGHS.toFixed(2)} confirmed!`);
+    setTimeout(() => setDownloadSuccessBanner(null), 4000);
+  };
+
+  const handleFridayPayoutSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPayoutFeedback(null);
+
+    const amount = parseFloat(payoutAmountGHS);
+    if (isNaN(amount) || amount < 90) {
+      setPayoutFeedback({ type: 'error', text: 'Minimum Friday withdrawal threshold is GH₵ 90.00.' });
+      return;
+    }
+    if (amount > availableBalanceGHS) {
+      setPayoutFeedback({
+        type: 'error',
+        text: `Insufficient available balance (${formatAmount(availableBalanceGHS)}).`
+      });
+      return;
+    }
+
+    setIsSubmittingPayout(true);
+    try {
+      setAvailableBalanceGHS((prev) => prev - amount);
+      setWithdrawnBalanceGHS((prev) => prev + amount);
+      setPayoutAmountGHS('');
+      setPayoutFeedback({
+        type: 'success',
+        text: `✅ Payout request of GH₵ ${amount.toFixed(2)} sent to earnmegadesk@gmail.com for Friday Paystack Transfer!`
+      });
+    } catch (_) {
+      setPayoutFeedback({
+        type: 'error',
+        text: 'Could not dispatch request.'
+      });
+    } finally {
+      setIsSubmittingPayout(false);
+    }
+  };
+
+  const handleAiBotSend = (customPrompt?: string) => {
+    const query = (customPrompt || aiInput).trim();
+    if (!query) return;
+
+    let reply = `RECOMMENDATION:\nTo maximize conversions on "${query}", pair your offer with a **1-Click Order Bump** at checkout and automated WhatsApp customer sync.`;
+    setAiMessages((prev) => [...prev, { sender: 'user', text: query }, { sender: 'bot', text: reply }]);
+    if (!customPrompt) setAiInput('');
+  };
+
+  const filteredMarketplaceProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchesSearch =
+        p.title.toLowerCase().includes(marketSearch.toLowerCase()) ||
+        p.creator.toLowerCase().includes(marketSearch.toLowerCase()) ||
+        p.category.toLowerCase().includes(marketSearch.toLowerCase());
+      if (!matchesSearch) return false;
+      if (marketFilter === 'All Offers') return true;
+      if (marketFilter === 'Top Pick') return p.badges.includes('TOP PICK');
+      if (marketFilter === 'High Converting') return p.badges.includes('HIGH CONVERTING');
+      return p.category === marketFilter;
+    });
+  }, [products, marketSearch, marketFilter]);
+
+  const unreadNotifCount = notificationsList.filter((n) => !n.read).length;
+  const userInitials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || 'GM';
+
+  const milestoneTiers = [
+    { name: 'Starter', min: 0, max: 999, label: 'Starter' },
+    { name: 'Bronze Excellence', min: 1000, max: 4999, label: 'Bronze Excellence' },
+    { name: 'Silver Executive', min: 5000, max: 9999, label: 'Silver Executive' },
+    { name: 'Gold Partner', min: 10000, max: 24999, label: 'Gold Partner' },
+    { name: 'Diamond Ambassador', min: 25000, max: Infinity, label: 'Diamond Ambassador' }
+  ];
+  const reversedTiers = [...milestoneTiers].reverse();
+  const currentTier = reversedTiers.find(t => totalEarningsGHS >= t.min) || milestoneTiers[0];
+  const nextTier = milestoneTiers[milestoneTiers.indexOf(currentTier) + 1] || currentTier;
+  const milestoneGoalGHS = nextTier.min || currentTier.max;
+  const milestonePercent = Math.min(100, Math.round((totalEarningsGHS / milestoneGoalGHS) * 100));
+
+  if (activeSalesPageProduct && !checkoutStep) {
+    const p = activeSalesPageProduct;
+    return (
+      <div className="min-h-screen bg-[#070b14] text-white pb-24">
+        <div className="bg-emerald-950/90 border-b border-emerald-500/30 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 sticky top-0 z-50 backdrop-blur-md">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="bg-emerald-500 text-black font-bold px-2 py-0.5 rounded text-[10px]">
+              AFFILIATE LINK LANDING PAGE
+            </span>
+            <span className="text-emerald-200 font-mono">
+              Referred by: <strong>{referredByCode}</strong> • Product: <strong>{p.shortCode}</strong>
+            </span>
+          </div>
+          <button
+            onClick={() => setActiveSalesPageProduct(null)}
+            className="text-xs bg-amber-500 hover:bg-amber-400 text-black font-bold px-3 py-1 rounded-lg"
+          >
+            ← Return to Affiliate Hub
+          </button>
+        </div>
+
+        <div className="max-w-3xl mx-auto px-4 py-10">
+          <div className="bg-[#0d1322] border border-emerald-500/30 rounded-3xl p-6 md:p-10 shadow-2xl">
+            <h1 className="text-2xl md:text-4xl font-black text-white leading-tight mb-4">{p.headline}</h1>
+            <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-6">{p.subheadline}</p>
+            <button
+              onClick={() => openDigitstemCheckoutForProduct(p)}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-110 text-black font-black text-base shadow-lg shadow-emerald-500/25 transition-all"
+            >
+              BUY NOW — PROCEED TO CHECKOUT ({formatAmount(p.priceGHS)}) →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#070b14] text-white font-sans pb-24 selection:bg-emerald-500 selection:text-black">
+      <header className="sticky top-0 z-40 bg-[#0b111e]/95 backdrop-blur-md border-b border-white/10 px-4 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => {
+                localStorage.removeItem("earnmega_target_pillar");
+                window.location.href = "/";
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white text-xs transition-all"
+            >
+              ← Hub
+            </button>
+            <button
+              onClick={() => setIsDrawerOpen(true)}
+              className="p-2.5 rounded-xl bg-[#141d30] hover:bg-[#1c2842] border border-white/10 text-white transition-all"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div onClick={() => setActiveSection('dashboard')} className="cursor-pointer flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center font-black text-black text-sm">
+                EM
+              </div>
+              <div className="hidden sm:block">
+                <span className="font-extrabold text-sm tracking-wide text-white block leading-none">
+                  EARNMEGA
+                </span>
+                <span className="text-[10px] text-emerald-400 font-mono">Affiliate Hub</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedCurrency}
+              onChange={(e) => setSelectedCurrency(e.target.value)}
+              className="bg-[#141d30] border border-white/10 rounded-full px-3 py-1.5 text-xs font-bold text-white focus:outline-none cursor-pointer"
+            >
+              {Object.values(GLOBAL_CURRENCIES).map((curr) => (
+                <option key={curr.code} value={curr.code} className="bg-[#0d1322] text-white">
+                  {curr.code} ({curr.symbol})
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => setIsNotificationsOpen(true)}
+              className="relative p-2.5 rounded-full bg-[#141d30] hover:bg-[#1c2842] border border-white/10 text-white transition-all"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full">
+                {unreadNotifCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setIsProfileSheetOpen(true)}
+              className="w-9 h-9 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-black text-xs flex items-center justify-center hover:bg-emerald-500/30 transition-all"
+            >
+              {userInitials}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {isDrawerOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex">
+          <div className="w-80 max-w-[85vw] bg-[#0b111e] border-r border-white/10 h-full overflow-y-auto p-5 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500 text-black font-black flex items-center justify-center">
+                    EM
+                  </div>
+                  <div>
+                    <span className="font-black text-sm text-white block">EarnMega Ecosystem</span>
+                    <span className="text-[10px] text-emerald-400 font-mono">ID: {userAffiliateCode}</span>
+                  </div>
+                </div>
+                <button onClick={() => setIsDrawerOpen(false)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-5 text-xs mt-4">
+                {[
+                  { id: 'dashboard', label: 'Performance Hub', icon: BarChart3 },
+                  { id: 'marketplace', label: 'Affiliate Marketplace', icon: ShoppingBag },
+                  { id: 'links', label: 'Link Manager & Shortener', icon: Share2 },
+                  { id: 'exam', label: '5-Step Exam & Certificate', icon: Award },
+                  { id: 'contests', label: 'Milestones & Contests', icon: Trophy },
+                  { id: 'payouts', label: 'Friday Wallet & Withdrawals', icon: DollarSign },
+                  { id: 'ledger', label: 'Financial Sales Ledger', icon: FileText },
+                  { id: 'vault', label: 'TikTok & WhatsApp Swipe Vault', icon: MessageSquare },
+                  { id: 'leads_crm', label: 'Abandoned Checkout Leads CRM', icon: Users },
+                  { id: 'calculator', label: 'Profit Simulator', icon: Calculator },
+                  { id: 'creator', label: 'Creator Whitelist Portal', icon: Briefcase },
+                  { id: 'rules', label: 'Official Rules & Regulations', icon: ShieldCheck },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveSection(item.id as ActiveSection);
+                        setIsDrawerOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-all mb-1 ${
+                        activeSection === item.id
+                          ? 'bg-indigo-600/25 text-indigo-300 border border-indigo-500/40'
+                          : 'text-gray-300 hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <div className="flex-1" onClick={() => setIsDrawerOpen(false)} />
+        </div>
+      )}
+
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {settingsSavedBanner && (
+          <div className="mb-4 bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between">
+            <span>{settingsSavedBanner}</span>
+            <button onClick={() => setSettingsSavedBanner(null)}>✕</button>
+          </div>
+        )}
+        {downloadSuccessBanner && (
+          <div className="mb-4 bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between">
+            <span>{downloadSuccessBanner}</span>
+            <button onClick={() => setDownloadSuccessBanner(null)}>✕</button>
+          </div>
+        )}
+
+        {activeSection === 'dashboard' && (
+          <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-black text-white">Welcome back, {firstName} 👋</h1>
+                <p className="text-xs text-gray-400 mt-1">EarnMega Affiliate Command Centre • ID: <span className="text-emerald-400 font-mono font-bold">{userAffiliateCode}</span></p>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-indigo-800 rounded-3xl p-6 shadow-xl">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-100 block">AVAILABLE BALANCE</span>
+              <div className="text-3xl md:text-4xl font-black text-white mt-1 mb-2">{formatAmount(availableBalanceGHS)}</div>
+              <button
+                onClick={() => setActiveSection('payouts')}
+                className="py-3 px-6 rounded-xl bg-white hover:bg-gray-100 text-indigo-950 font-black text-xs transition-all"
+              >
+                Pay Out Now (Friday)
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'marketplace' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-black text-white">Affiliate Marketplace</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredMarketplaceProducts.map((p) => (
+                <div key={p.id} className="bg-[#0f172a] border border-white/10 rounded-3xl p-5 flex flex-col h-full">
+                  <h3 className="text-lg font-bold text-white mb-1">{p.title}</h3>
+                  <span className="text-xs text-gray-400 mb-4">By <span className="text-emerald-400 font-mono">{p.creator}</span></span>
+                  <div className="mt-auto space-y-2">
+                    <button onClick={() => openDigitstemCheckoutForProduct(p)} className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs transition-all">
+                      Checkout ({formatAmount(p.priceGHS)})
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
